@@ -1,4 +1,4 @@
-require('dotenv').config()
+if (process.env.NODE_ENV !== 'production') require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 
@@ -78,7 +78,8 @@ app.use('/api/referrers', requireAuth, referrersRouter)
 app.use('/api/contacts', requireAuth, contactsRouter)
 
 app.use((err, req, res, next) => {
-  console.error(err)
+  if (process.env.NODE_ENV !== 'production') console.error(err)
+  else console.error(err.message)
   res.status(500).json({ error: err.message || 'Internal server error' })
 })
 

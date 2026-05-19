@@ -9,10 +9,15 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
+    "build": "prisma generate",
+    "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "node prisma/seed.js",
     "db:studio": "prisma studio"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +26,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "prisma": "^7.8.0",
     "@supabase/supabase-js": "^2.106.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -32,7 +38,6 @@
     "resend": "^6.12.3"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14",
-    "prisma": "^7.8.0"
+    "nodemon": "^3.1.14"
   }
 }

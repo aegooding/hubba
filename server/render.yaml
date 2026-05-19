@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: hubba-server
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: WEBHOOK_SECRET
+        sync: false
+      - key: UNSUBSCRIBE_SECRET
+        sync: false
+      - key: CLIENT_URL
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
