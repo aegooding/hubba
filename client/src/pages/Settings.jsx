@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
 import api from '../lib/api'
-import { supabase } from '../lib/supabase'
 
 function BrandCard({ brand: initial }) {
   const [brand, setBrand] = useState(initial)
@@ -20,24 +19,18 @@ function BrandCard({ brand: initial }) {
 
   async function handleLogoUpload(file) {
     if (!file) return
-    const ext = file.name.split('.').pop()
-    const path = `brands/${brand.slug}/logo.${ext}`
     setUploading(true)
     try {
-      const { error } = await supabase.storage
-        .from('logos')
-        .upload(path, file, { upsert: true, contentType: file.type })
-
-      if (error) throw error
-
-      const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(path)
-
-      await api.patch(`/api/brands/${brand.id}`, { logoUrl: publicUrl })
-      setBrand(prev => ({ ...prev, logoUrl: publicUrl }))
-      setForm(prev => ({ ...prev, logoUrl: publicUrl }))
+      const formData = new FormData()
+      formData.append('logo', file)
+      const { data } = await api.post(`/api/brands/${brand.id}/logo`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      setBrand(data)
+      setForm(prev => ({ ...prev, logoUrl: data.logoUrl }))
       showToast('success', 'Logo uploaded')
     } catch (err) {
-      showToast('error', err.message || 'Upload failed')
+      showToast('error', err.response?.data?.error || err.message || 'Upload failed')
     } finally {
       setUploading(false)
     }
@@ -188,18 +181,11 @@ function BrandCard({ brand: initial }) {
 export default function Settings() {
   const [brands, setBrands] = useState([])
   const [loading, setLoading] = useState(true)
-  const [storageReady, setStorageReady] = useState(null)
 
   useEffect(() => {
     api.get('/api/brands').then(({ data }) => {
       setBrands(data.brands)
       setLoading(false)
-    })
-
-    // Check if the logos bucket exists
-    supabase.storage.listBuckets().then(({ data, error }) => {
-      const hasBucket = data?.some(b => b.name === 'logos')
-      setStorageReady(hasBucket)
     })
   }, [])
 
@@ -209,17 +195,6 @@ export default function Settings() {
       <p style={{ color: 'var(--hubba-text-muted)', fontSize: 14, margin: '0 0 28px' }}>
         Manage brand settings and logos.
       </p>
-
-      {storageReady === false && (
-        <div style={{
-          background: '#fffbeb', border: '1px solid var(--hubba-amber)',
-          borderRadius: 8, padding: '14px 18px', marginBottom: 24, fontSize: 14,
-        }}>
-          <strong>Logo uploads need a Supabase storage bucket.</strong> Go to your Supabase dashboard →{' '}
-          <strong>Storage</strong> → <strong>New bucket</strong>, name it <code style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>logos</code>,{' '}
-          and make it <strong>public</strong>. Then come back here.
-        </div>
-      )}
 
       {loading ? (
         <p style={{ color: 'var(--hubba-text-muted)' }}>Loading…</p>
