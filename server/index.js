@@ -32,10 +32,43 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, version: '1.0.0' })
 })
 
-// Public webhook — no auth
+// Public routes — no auth
 app.use('/api/leads/webhook', webhookRouter)
 
-// All /api/* routes require auth except health and webhooks
+app.post('/api/contacts/unsubscribe', async (req, res, next) => {
+  try {
+    const { token } = req.body
+    if (!token) return res.status(400).json({ error: 'Token required' })
+
+    const secret = process.env.UNSUBSCRIBE_SECRET
+    let payload
+    try {
+      payload = require('jsonwebtoken').verify(token, secret)
+    } catch {
+      return res.status(400).json({ error: 'Invalid or expired unsubscribe link' })
+    }
+
+    const { contactId, campaignId } = payload
+    const prisma = require('./lib/prisma')
+
+    const contact = await prisma.contact.update({
+      where: { id: contactId },
+      data: { unsubscribed: true },
+      include: { leads: { include: { brand: true }, take: 1 } },
+    })
+
+    await prisma.emailEvent.create({
+      data: { contactId, campaignSendId: null, event: 'unsubscribed' },
+    })
+
+    const brandName = contact.leads[0]?.brand?.name || ''
+    res.json({ success: true, brandName })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// Authenticated routes
 app.use('/api/brands', requireAuth, brandsRouter)
 app.use('/api/leads', requireAuth, leadsRouter)
 app.use('/api/campaigns', requireAuth, campaignsRouter)

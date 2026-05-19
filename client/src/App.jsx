@@ -6,6 +6,7 @@ import AppShell from './components/layout/AppShell'
 import Login from './pages/Login'
 import Leads from './pages/Leads'
 import Contacts from './pages/Contacts'
+import ContactsImport from './pages/ContactsImport'
 import Campaigns from './pages/Campaigns'
 import Referrers from './pages/Referrers'
 import Settings from './pages/Settings'
@@ -28,6 +29,7 @@ export default function App() {
               <Route index element={<Navigate to="/leads" replace />} />
               <Route path="leads" element={<Leads />} />
               <Route path="contacts" element={<Contacts />} />
+              <Route path="contacts/import" element={<ContactsImport />} />
               <Route path="campaigns" element={<Campaigns />} />
               <Route path="referrers" element={<Referrers />} />
               <Route path="settings" element={<Settings />} />
