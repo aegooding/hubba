@@ -1,0 +1,180 @@
+@import "tailwindcss";
+
+:root {
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --hubba-amber: #fbb040;
+  --hubba-amber-light: #fdd080;
+  --hubba-amber-dark: #e09020;
+  --hubba-black: #0f0f0f;
+  --hubba-charcoal: #1e1e1e;
+  --hubba-surface: #f7f5f0;
+  --hubba-surface-2: #edeae3;
+  --hubba-text: #1a1a1a;
+  --hubba-text-muted: #6b6560;
+  --hubba-border: #d4cfc8;
+  --hubba-success: #2d7a4f;
+  --hubba-warning: #c47b0a;
+  --hubba-danger: #c0392b;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--hubba-surface);
+  color: var(--hubba-text);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+}
+
+/* ── Buttons ── */
+.btn-primary {
+  background: var(--hubba-amber);
+  color: var(--hubba-black);
+  font-family: var(--font-body);
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: var(--hubba-amber-light); }
+.btn-primary:active { background: var(--hubba-amber-dark); }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--hubba-text);
+  font-family: var(--font-body);
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid var(--hubba-border);
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-secondary:hover {
+  background: var(--hubba-surface-2);
+  border-color: var(--hubba-text-muted);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--hubba-text-muted);
+  font-family: var(--font-body);
+  font-weight: 500;
+  border-radius: 6px;
+  border: none;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-ghost:hover {
+  background: var(--hubba-surface-2);
+  color: var(--hubba-text);
+}
+
+/* ── Status badges ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.badge-new        { background: #e8f0fe; color: #1a56db; }
+.badge-contacted  { background: #fef9c3; color: #854d0e; }
+.badge-qualified  { background: #fde68a; color: #92400e; }
+.badge-submitted  { background: #fed7aa; color: #9a3412; }
+.badge-approved   { background: #d1fae5; color: #065f46; }
+.badge-converted  { background: #a7f3d0; color: #064e3b; }
+.badge-lost       { background: #fee2e2; color: #991b1b; }
+
+/* ── Cards ── */
+.card {
+  background: white;
+  border: 1px solid var(--hubba-border);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+/* ── Sidebar nav item ── */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  border-radius: 6px;
+  color: rgba(255,255,255,0.55);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  text-decoration: none;
+  border-left: 3px solid transparent;
+}
+.nav-item:hover {
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.85);
+}
+.nav-item.active {
+  background: rgba(251, 176, 64, 0.15);
+  color: var(--hubba-amber);
+  border-left-color: var(--hubba-amber);
+}
+
+/* ── Input ── */
+.input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--hubba-border);
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  background: white;
+  color: var(--hubba-text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.input:focus {
+  border-color: var(--hubba-amber);
+  box-shadow: 0 0 0 3px rgba(251, 176, 64, 0.15);
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--hubba-text-muted);
+  display: block;
+  margin-bottom: 4px;
+}

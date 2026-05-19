@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── BRANDS ──────────────────────────────────────────────────────────────────
+
+model Brand {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  primaryColor String?
+  logoUrl      String?
+  fromName     String?
+  fromEmail    String?
+  createdAt    DateTime @default(now())
+
+  leads        Lead[]
+  campaigns    Campaign[]
+  referrers    Referrer[]
+}
+
+// ─── CONTACTS ────────────────────────────────────────────────────────────────
+
+model Contact {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  firstName    String?
+  lastName     String?
+  phone        String?
+  unsubscribed Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  leads         Lead[]
+  campaignSends CampaignSend[]
+  emailEvents   EmailEvent[]
+}
+
+// ─── LEADS ───────────────────────────────────────────────────────────────────
+
+model Lead {
+  id         String     @id @default(cuid())
+  brandId    String
+  brand      Brand      @relation(fields: [brandId], references: [id])
+  contactId  String
+  contact    Contact    @relation(fields: [contactId], references: [id])
+  referrerId String?
+  referrer   Referrer?  @relation(fields: [referrerId], references: [id])
+
+  status     LeadStatus @default(NEW)
+  source     String?
+  loanType   String?
+  loanAmount Float?
+  notes      String?
+  tags       String[]
+
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  activities Activity[]
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  SUBMITTED
+  APPROVED
+  CONVERTED
+  LOST
+}
+
+// ─── ACTIVITIES ───────────────────────────────────────────────────────────────
+
+model Activity {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id])
+  type      String
+  body      String?
+  meta      Json?
+  createdAt DateTime @default(now())
+  createdBy String?
+}
+
+// ─── REFERRERS ────────────────────────────────────────────────────────────────
+
+model Referrer {
+  id        String   @id @default(cuid())
+  brandId   String
+  brand     Brand    @relation(fields: [brandId], references: [id])
+
+  name      String
+  company   String?
+  email     String?
+  phone     String?
+  tier      String?
+  utmSource String?
+  isActive  Boolean  @default(true)
+  notes     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  leads     Lead[]
+}
+
+// ─── CAMPAIGNS ────────────────────────────────────────────────────────────────
+
+model Campaign {
+  id           String         @id @default(cuid())
+  brandId      String
+  brand        Brand          @relation(fields: [brandId], references: [id])
+
+  name         String
+  subject      String
+  previewText  String?
+  htmlBody     String
+  fromName     String
+  fromEmail    String
+  replyTo      String?
+
+  status       CampaignStatus @default(DRAFT)
+  scheduledAt  DateTime?
+  sentAt       DateTime?
+  segmentRules Json?
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  sends        CampaignSend[]
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  CANCELLED
+}
+
+// ─── CAMPAIGN SENDS ───────────────────────────────────────────────────────────
+
+model CampaignSend {
+  id         String    @id @default(cuid())
+  campaignId String
+  campaign   Campaign  @relation(fields: [campaignId], references: [id])
+  contactId  String
+  contact    Contact   @relation(fields: [contactId], references: [id])
+
+  resendId    String?
+  status      String    @default("queued")
+  sentAt      DateTime?
+
+  emailEvents EmailEvent[]
+}
+
+// ─── EMAIL EVENTS ─────────────────────────────────────────────────────────────
+
+model EmailEvent {
+  id             String        @id @default(cuid())
+  campaignSendId String?
+  campaignSend   CampaignSend? @relation(fields: [campaignSendId], references: [id])
+  contactId      String
+  contact        Contact       @relation(fields: [contactId], references: [id])
+
+  event      String
+  url        String?
+  occurredAt DateTime @default(now())
+}
