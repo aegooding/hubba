@@ -25,7 +25,6 @@ const templates = {
 <div class="wrapper">
   <div class="header">
     {{brand_logo}}
-    <h1>{{brand_name}}</h1>
     <p>Smart finance, made simple.</p>
   </div>
   <div class="body">
@@ -71,7 +70,6 @@ const templates = {
 <div class="wrapper">
   <div class="header">
     {{brand_logo}}
-    <h1>{{brand_name}}</h1>
     <p>Finance that fits.</p>
   </div>
   <div class="body">

@@ -115,11 +115,26 @@ export default function CampaignNew() {
   }, [form.brandId])
 
   useEffect(() => {
-    if (previewRef.current) {
-      const doc = previewRef.current.contentDocument
-      if (doc) { doc.open(); doc.write(form.htmlBody || '<p style="padding:20px;color:#999">HTML preview will appear here…</p>'); doc.close() }
-    }
-  }, [form.htmlBody])
+    if (!previewRef.current) return
+    const doc = previewRef.current.contentDocument
+    if (!doc) return
+
+    const brand = brands.find(b => b.id === form.brandId)
+    const brandName = brand?.name || '{{brand_name}}'
+    const logoUrl = brand?.logoUrl || ''
+    const logoImg = logoUrl
+      ? `<img src="${logoUrl}" alt="${brandName}" style="max-height:48px;display:block;margin-bottom:12px;" />`
+      : `<span style="display:block;font-size:22px;font-weight:700;color:white;letter-spacing:-0.5px;margin-bottom:8px;">${brandName}</span>`
+
+    const preview = (form.htmlBody || '<p style="padding:20px;color:#999">HTML preview will appear here…</p>')
+      .replace(/\{\{brand_logo\}\}/g, logoImg)
+      .replace(/\{\{brand_logo_url\}\}/g, logoUrl)
+      .replace(/\{\{brand_name\}\}/g, brandName)
+      .replace(/\{\{first_name\}\}/g, 'Preview')
+      .replace(/\{\{unsubscribe_url\}\}/g, '#')
+
+    doc.open(); doc.write(preview); doc.close()
+  }, [form.htmlBody, form.brandId, brands])
 
   function readHtmlFile(file) {
     if (!file) return

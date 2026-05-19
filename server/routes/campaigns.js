@@ -8,7 +8,7 @@ const { templates } = require('../lib/emailTemplates')
 function applyMergeTags(html, { firstName, brandName, unsubscribeUrl, brandLogoUrl }) {
   const logoImg = brandLogoUrl
     ? `<img src="${brandLogoUrl}" alt="${brandName}" style="max-height:48px;display:block;" />`
-    : `<strong>${brandName}</strong>`
+    : `<span style="display:block;font-size:22px;font-weight:700;color:white;letter-spacing:-0.5px;">${brandName}</span>`
   return html
     .replace(/\{\{first_name\}\}/g, firstName || 'there')
     .replace(/\{\{brand_name\}\}/g, brandName || '')
