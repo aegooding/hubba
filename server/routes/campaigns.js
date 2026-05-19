@@ -5,11 +5,16 @@ const prisma = require('../lib/prisma')
 const resend = require('../lib/resend')
 const { templates } = require('../lib/emailTemplates')
 
-function applyMergeTags(html, { firstName, brandName, unsubscribeUrl }) {
+function applyMergeTags(html, { firstName, brandName, unsubscribeUrl, brandLogoUrl }) {
+  const logoImg = brandLogoUrl
+    ? `<img src="${brandLogoUrl}" alt="${brandName}" style="max-height:48px;display:block;" />`
+    : `<strong>${brandName}</strong>`
   return html
     .replace(/\{\{first_name\}\}/g, firstName || 'there')
     .replace(/\{\{brand_name\}\}/g, brandName || '')
     .replace(/\{\{unsubscribe_url\}\}/g, unsubscribeUrl || '#')
+    .replace(/\{\{brand_logo\}\}/g, logoImg)
+    .replace(/\{\{brand_logo_url\}\}/g, brandLogoUrl || '')
 }
 
 function buildUnsubscribeUrl(contactId, campaignId) {
@@ -141,6 +146,7 @@ router.post('/:id/test', async (req, res, next) => {
     const html = applyMergeTags(campaign.htmlBody, {
       firstName: 'Test',
       brandName: campaign.brand.name,
+      brandLogoUrl: campaign.brand.logoUrl,
       unsubscribeUrl: '#test-unsubscribe',
     })
 
@@ -198,6 +204,7 @@ router.post('/:id/send', async (req, res, next) => {
         const html = applyMergeTags(campaign.htmlBody, {
           firstName: send.contact.firstName,
           brandName: campaign.brand.name,
+          brandLogoUrl: campaign.brand.logoUrl,
           unsubscribeUrl: buildUnsubscribeUrl(send.contact.id, campaign.id),
         })
         try {

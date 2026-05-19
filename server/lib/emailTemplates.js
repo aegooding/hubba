@@ -9,6 +9,7 @@ const templates = {
   body { margin: 0; padding: 0; background: #f0f4f1; font-family: Arial, sans-serif; }
   .wrapper { max-width: 600px; margin: 0 auto; padding: 24px 16px; }
   .header { background: #356852; border-radius: 8px 8px 0 0; padding: 32px; text-align: center; }
+  .header-logo { max-height: 48px; display: block; margin-bottom: 12px; }
   .header h1 { margin: 0; color: white; font-size: 28px; letter-spacing: -0.5px; }
   .header p { margin: 8px 0 0; color: rgba(255,255,255,0.75); font-size: 14px; }
   .body { background: #ecdbba; border-radius: 0 0 8px 8px; padding: 32px; }
@@ -23,6 +24,7 @@ const templates = {
 <body>
 <div class="wrapper">
   <div class="header">
+    {{brand_logo}}
     <h1>{{brand_name}}</h1>
     <p>Smart finance, made simple.</p>
   </div>
@@ -53,6 +55,7 @@ const templates = {
   body { margin: 0; padding: 0; background: #f5f7f5; font-family: Arial, sans-serif; }
   .wrapper { max-width: 600px; margin: 0 auto; padding: 24px 16px; }
   .header { background: #2D5F4F; border-radius: 8px 8px 0 0; padding: 32px; }
+  .header-logo { max-height: 48px; display: block; margin-bottom: 12px; }
   .header h1 { margin: 0; color: white; font-size: 26px; font-style: italic; letter-spacing: -0.5px; }
   .header p { margin: 8px 0 0; color: rgba(255,255,255,0.7); font-size: 14px; }
   .body { background: white; border-radius: 0 0 8px 8px; padding: 32px; border: 1px solid #e8eee8; border-top: none; }
@@ -67,6 +70,7 @@ const templates = {
 <body>
 <div class="wrapper">
   <div class="header">
+    {{brand_logo}}
     <h1>{{brand_name}}</h1>
     <p>Finance that fits.</p>
   </div>

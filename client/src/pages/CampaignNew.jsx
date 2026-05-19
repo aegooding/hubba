@@ -49,6 +49,8 @@ export default function CampaignNew() {
   const [campaignId, setCampaignId] = useState(editId || null)
   const [toast, setToast] = useState(null)
   const previewRef = useRef()
+  const htmlFileRef = useRef()
+  const [htmlDragOver, setHtmlDragOver] = useState(false)
 
   const [form, setForm] = useState({
     brandId: activeBrand.slug !== 'all' ? '' : '',
@@ -118,6 +120,22 @@ export default function CampaignNew() {
       if (doc) { doc.open(); doc.write(form.htmlBody || '<p style="padding:20px;color:#999">HTML preview will appear here…</p>'); doc.close() }
     }
   }, [form.htmlBody])
+
+  function readHtmlFile(file) {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (e) => set('htmlBody', e.target.result)
+    reader.readAsText(file)
+  }
+
+  function handleHtmlDrop(e) {
+    e.preventDefault()
+    setHtmlDragOver(false)
+    const file = e.dataTransfer.files[0]
+    if (file && (file.name.endsWith('.html') || file.name.endsWith('.htm'))) {
+      readHtmlFile(file)
+    }
+  }
 
   async function loadTemplate(templateId) {
     try {
@@ -275,6 +293,21 @@ export default function CampaignNew() {
                   <option value="">Load template…</option>
                   {templateList.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  style={{ fontSize: 12, padding: '4px 10px' }}
+                  onClick={() => htmlFileRef.current.click()}
+                >
+                  ↑ Upload HTML
+                </button>
+                <input
+                  ref={htmlFileRef}
+                  type="file"
+                  accept=".html,.htm"
+                  style={{ display: 'none' }}
+                  onChange={e => readHtmlFile(e.target.files[0])}
+                />
               </div>
               <button
                 onClick={() => setMobilePreview(p => !p)}
@@ -287,7 +320,17 @@ export default function CampaignNew() {
 
             {/* Editor + preview */}
             <div style={{ display: 'flex', gap: 16, height: 480 }}>
-              <div style={{ flex: 1, border: '1px solid var(--hubba-border)', borderRadius: 8, overflow: 'hidden' }}>
+              <div
+                style={{
+                  flex: 1, borderRadius: 8, overflow: 'hidden',
+                  border: `2px ${htmlDragOver ? 'dashed var(--hubba-amber)' : 'solid var(--hubba-border)'}`,
+                  background: htmlDragOver ? 'rgba(251,176,64,0.04)' : undefined,
+                  transition: 'border-color 0.15s',
+                }}
+                onDragOver={e => { e.preventDefault(); setHtmlDragOver(true) }}
+                onDragLeave={() => setHtmlDragOver(false)}
+                onDrop={handleHtmlDrop}
+              >
                 <Editor
                   language="html"
                   value={form.htmlBody}
@@ -327,9 +370,10 @@ export default function CampaignNew() {
 
             {/* Merge tag hint */}
             <div style={{ marginTop: 8, fontSize: 12, color: 'var(--hubba-text-muted)' }}>
-              Merge tags: <code style={{ fontFamily: 'var(--font-mono)', background: 'var(--hubba-surface-2)', padding: '1px 5px', borderRadius: 3 }}>{'{{first_name}}'}</code>{' '}
-              <code style={{ fontFamily: 'var(--font-mono)', background: 'var(--hubba-surface-2)', padding: '1px 5px', borderRadius: 3 }}>{'{{brand_name}}'}</code>{' '}
-              <code style={{ fontFamily: 'var(--font-mono)', background: 'var(--hubba-surface-2)', padding: '1px 5px', borderRadius: 3 }}>{'{{unsubscribe_url}}'}</code>
+              Merge tags:{' '}
+              {['{{first_name}}', '{{brand_name}}', '{{brand_logo}}', '{{brand_logo_url}}', '{{unsubscribe_url}}'].map(tag => (
+                <code key={tag} style={{ fontFamily: 'var(--font-mono)', background: 'var(--hubba-surface-2)', padding: '1px 5px', borderRadius: 3, marginRight: 5 }}>{tag}</code>
+              ))}
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
