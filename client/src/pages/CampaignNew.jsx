@@ -123,7 +123,7 @@ export default function CampaignNew() {
     const brandName = brand?.name || '{{brand_name}}'
     const logoUrl = brand?.logoUrl || ''
     const logoImg = logoUrl
-      ? `<img src="${logoUrl}" alt="${brandName}" style="max-height:48px;display:block;margin-bottom:12px;" />`
+      ? `<img src="${logoUrl}" alt="" style="max-height:48px;display:block;margin-bottom:12px;" />`
       : `<span style="display:block;font-size:22px;font-weight:700;color:white;letter-spacing:-0.5px;margin-bottom:8px;">${brandName}</span>`
 
     const preview = (form.htmlBody || '<p style="padding:20px;color:#999">HTML preview will appear here…</p>')
@@ -156,6 +156,17 @@ export default function CampaignNew() {
     try {
       const { data } = await api.get(`/api/campaigns/templates/${templateId}`)
       set('htmlBody', data.html)
+      // Auto-switch brand to match template
+      const matchingBrand = brands.find(b => b.slug === templateId)
+      if (matchingBrand) {
+        setForm(prev => ({
+          ...prev,
+          htmlBody: data.html,
+          brandId: matchingBrand.id,
+          fromName: matchingBrand.fromName || matchingBrand.name,
+          fromEmail: matchingBrand.fromEmail || prev.fromEmail,
+        }))
+      }
     } catch {}
   }
 
@@ -378,7 +389,6 @@ export default function CampaignNew() {
                   ref={previewRef}
                   style={{ flex: 1, border: 'none', background: 'white' }}
                   title="email-preview"
-                  sandbox="allow-same-origin"
                 />
               </div>
             </div>
