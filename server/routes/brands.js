@@ -60,10 +60,11 @@ router.post('/:id/logo', upload.single('logo'), async (req, res, next) => {
     if (error) throw error
 
     const { data: { publicUrl } } = storage.from('logos').getPublicUrl(path)
+    const logoUrl = `${publicUrl}?v=${Date.now()}`
 
     const updated = await prisma.brand.update({
       where: { id: brand.id },
-      data: { logoUrl: publicUrl },
+      data: { logoUrl },
     })
 
     res.json(updated)

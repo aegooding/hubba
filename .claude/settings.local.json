@@ -5,7 +5,9 @@
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
       "Bash(npm install *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(curl -sI \"https://elxfwhljjfvbbsxqcyxm.supabase.co/storage/v1/object/public/logos/brands/loan-fair/logo.png\")",
+      "Bash(curl -s \"https://elxfwhljjfvbbsxqcyxm.supabase.co/storage/v1/object/public/logos/brands/klasp/logo.png\")"
     ]
   }
 }
