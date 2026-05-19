@@ -22,6 +22,7 @@ export default function LeadSlideOver({ lead: initialLead, onClose, onUpdate, on
   const [noteText, setNoteText] = useState('')
   const [savingNote, setSavingNote] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [pendingStatus, setPendingStatus] = useState(null)
 
   useEffect(() => {
     if (!initialLead?.id) return
@@ -35,7 +36,13 @@ export default function LeadSlideOver({ lead: initialLead, onClose, onUpdate, on
 
   async function handleStatusChange(newStatus) {
     if (newStatus === lead.status) return
+    setPendingStatus(newStatus)
+  }
+
+  async function confirmStatusChange() {
+    const newStatus = pendingStatus
     const oldStatus = lead.status
+    setPendingStatus(null)
     setLead(prev => ({ ...prev, status: newStatus }))
     try {
       const { data } = await api.patch(`/api/leads/${lead.id}`, { status: newStatus })
@@ -146,24 +153,54 @@ export default function LeadSlideOver({ lead: initialLead, onClose, onUpdate, on
           {/* Status selector */}
           <div style={{ marginBottom: 20 }}>
             <div className="label">Status</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: pendingStatus ? 10 : 0 }}>
               {STATUSES.map(s => (
                 <button
                   key={s}
                   onClick={() => handleStatusChange(s)}
                   style={{
                     padding: '5px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600,
-                    cursor: 'pointer', border: '2px solid transparent',
+                    cursor: s === lead.status ? 'default' : 'pointer',
+                    border: '2px solid transparent',
                     background: lead.status === s ? 'var(--hubba-amber)' : 'var(--hubba-surface-2)',
                     color: lead.status === s ? 'var(--hubba-black)' : 'var(--hubba-text-muted)',
-                    borderColor: lead.status === s ? 'var(--hubba-amber)' : 'transparent',
+                    borderColor: pendingStatus === s ? 'var(--hubba-amber-dark)' : lead.status === s ? 'var(--hubba-amber)' : 'transparent',
                     transition: 'all 0.15s',
+                    opacity: pendingStatus && pendingStatus !== s && lead.status !== s ? 0.4 : 1,
                   }}
                 >
                   {STATUS_LABELS[s]}
                 </button>
               ))}
             </div>
+
+            {/* Inline confirmation */}
+            {pendingStatus && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                background: '#fffbeb',
+                border: '1px solid var(--hubba-amber)',
+                borderRadius: 8, padding: '10px 14px',
+              }}>
+                <span style={{ fontSize: 13, flex: 1, color: 'var(--hubba-text)' }}>
+                  Change status to <strong>{STATUS_LABELS[pendingStatus]}</strong>?
+                </span>
+                <button
+                  onClick={confirmStatusChange}
+                  className="btn-primary"
+                  style={{ padding: '5px 14px', fontSize: 13 }}
+                >
+                  Confirm
+                </button>
+                <button
+                  onClick={() => setPendingStatus(null)}
+                  className="btn-ghost"
+                  style={{ padding: '5px 10px', fontSize: 13 }}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Loan details */}

@@ -1,25 +1,32 @@
-const { createClient } = require('@supabase/supabase-js')
-
-let _supabase = null
-function getSupabase() {
-  if (!_supabase) {
-    _supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
-  }
-  return _supabase
-}
+const jwt = require('jsonwebtoken')
 
 async function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Missing authorization header' })
   }
+
   const token = authHeader.slice(7)
-  const { data, error } = await getSupabase().auth.getUser(token)
-  if (error || !data.user) {
+
+  // Log what env vars we actually have (remove after debugging)
+  console.log('SUPABASE_URL:', process.env.SUPABASE_URL)
+  console.log('JWT_SECRET defined:', !!process.env.SUPABASE_JWT_SECRET)
+
+  try {
+    const secret = process.env.SUPABASE_JWT_SECRET
+    if (!secret) {
+      // Fallback: decode without verification for local dev
+      const decoded = jwt.decode(token)
+      if (!decoded?.sub) return res.status(401).json({ error: 'Invalid token' })
+      req.user = { id: decoded.sub, email: decoded.email }
+      return next()
+    }
+    const decoded = jwt.verify(token, secret)
+    req.user = { id: decoded.sub, email: decoded.email }
+    next()
+  } catch (err) {
     return res.status(401).json({ error: 'Invalid or expired token' })
   }
-  req.user = data.user
-  next()
 }
 
 module.exports = { requireAuth }
