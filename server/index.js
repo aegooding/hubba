@@ -9,6 +9,7 @@ const referrersRouter = require('./routes/referrers')
 const contactsRouter = require('./routes/contacts')
 const webhookRouter = require('./routes/webhook')
 const brandsRouter = require('./routes/brands')
+const resendWebhookRouter = require('./routes/resendWebhook')
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -34,6 +35,7 @@ app.get('/api/health', (req, res) => {
 
 // Public routes — no auth
 app.use('/api/leads/webhook', webhookRouter)
+app.use('/api/webhooks/resend', resendWebhookRouter)
 
 app.post('/api/contacts/unsubscribe', async (req, res, next) => {
   try {

@@ -8,6 +8,8 @@ import Leads from './pages/Leads'
 import Contacts from './pages/Contacts'
 import ContactsImport from './pages/ContactsImport'
 import Campaigns from './pages/Campaigns'
+import CampaignNew from './pages/CampaignNew'
+import CampaignAnalytics from './pages/CampaignAnalytics'
 import Referrers from './pages/Referrers'
 import ReferrerDetail from './pages/ReferrerDetail'
 import Settings from './pages/Settings'
@@ -32,6 +34,9 @@ export default function App() {
               <Route path="contacts" element={<Contacts />} />
               <Route path="contacts/import" element={<ContactsImport />} />
               <Route path="campaigns" element={<Campaigns />} />
+              <Route path="campaigns/new" element={<CampaignNew />} />
+              <Route path="campaigns/:id" element={<CampaignAnalytics />} />
+              <Route path="campaigns/:id/edit" element={<CampaignNew />} />
               <Route path="referrers" element={<Referrers />} />
               <Route path="referrers/:id" element={<ReferrerDetail />} />
               <Route path="settings" element={<Settings />} />
