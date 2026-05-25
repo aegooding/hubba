@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Editor from '@monaco-editor/react'
-import EmailEditor from 'react-email-editor'
 import api from '../lib/api'
 import { useBrand } from '../context/BrandContext'
+
+const EmailEditor = lazy(() => import('react-email-editor'))
 
 const STATUSES = ['NEW', 'CONTACTED', 'QUALIFIED', 'SUBMITTED', 'APPROVED', 'CONVERTED', 'LOST']
 const SOURCES = ['web-form', 'referral', 'facebook', 'google', 'phone', 'manual', 'csv-import', 'webhook']
@@ -383,15 +384,21 @@ export default function CampaignNew() {
             {/* Editor area */}
             {editorMode === 'visual' ? (
               <div style={{ border: '1px solid var(--hubba-border)', borderRadius: 8 }}>
-                <EmailEditor
-                  ref={emailEditorRef}
-                  onReady={() => setVisualReady(true)}
-                  minHeight={580}
-                  options={{
-                    displayMode: 'email',
-                    appearance: { theme: 'light' },
-                  }}
-                />
+                <Suspense fallback={
+                  <div style={{ height: 580, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--hubba-text-muted)', fontSize: 14 }}>
+                    Loading visual editor…
+                  </div>
+                }>
+                  <EmailEditor
+                    ref={emailEditorRef}
+                    onReady={() => setVisualReady(true)}
+                    minHeight={580}
+                    options={{
+                      displayMode: 'email',
+                      appearance: { theme: 'light' },
+                    }}
+                  />
+                </Suspense>
               </div>
             ) : (
               <div style={{ display: 'flex', gap: 16, height: 480 }}>
