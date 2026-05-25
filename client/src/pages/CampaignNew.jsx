@@ -161,24 +161,21 @@ export default function CampaignNew() {
       displayMode: 'email',
       appearance: { theme: 'light' },
     })
+    // Sync HTML into form state on every design change
+    window.unlayer?.addEventListener('design:updated', () => {
+      window.unlayer.exportHtml(({ html }) => {
+        if (html) set('htmlBody', html)
+      })
+    })
     setVisualReady(true)
   }
 
-  async function exportVisualHtml() {
-    if (editorMode !== 'visual' || !window.unlayer) return null
-    return Promise.race([
-      new Promise((resolve) => {
-        window.unlayer.exportHtml(({ html }) => {
-          if (html) set('htmlBody', html)
-          resolve(html || null)
-        })
-      }),
-      new Promise((resolve) => setTimeout(() => resolve(null), 5000)),
-    ])
+  function exportVisualHtml() {
+    // No-op — HTML is kept in sync via design:updated event
+    return Promise.resolve(null)
   }
 
-  async function switchToHtml() {
-    await exportVisualHtml()
+  function switchToHtml() {
     setEditorMode('html')
   }
 
@@ -238,14 +235,15 @@ export default function CampaignNew() {
     if (step === 2) fetchAudienceCount()
   }, [step, form.segmentRules, form.brandId])
 
-  async function saveDraft(htmlOverride) {
+  const FALLBACK_HTML = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;padding:32px;max-width:600px;margin:0 auto"><p>Hi {{first_name}},</p><p>Write your message here.</p><p style="font-size:12px;color:#999;margin-top:32px;"><a href="{{unsubscribe_url}}">Unsubscribe</a></p></body></html>`
+
+  async function saveDraft() {
     setSaving(true)
     try {
-      const FALLBACK_HTML = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;padding:32px;max-width:600px;margin:0 auto"><p>Hi {{first_name}},</p><p>Write your campaign content here.</p><p style="font-size:12px;color:#999;margin-top:32px;"><a href="{{unsubscribe_url}}">Unsubscribe</a></p></body></html>`
-      const html = htmlOverride || (await exportVisualHtml()) || form.htmlBody || FALLBACK_HTML
+      const htmlBody = form.htmlBody || FALLBACK_HTML
       const payload = {
         ...form,
-        ...(html && { htmlBody: html }),
+        htmlBody,
         segmentRules: {
           status: form.segmentRules.status?.length ? form.segmentRules.status : undefined,
           source: form.segmentRules.source || undefined,
@@ -319,7 +317,7 @@ export default function CampaignNew() {
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 22, margin: 0, flex: 1 }}>
           {editId ? 'Edit Campaign' : 'New Campaign'}
         </h1>
-        <button onClick={async () => { const html = await exportVisualHtml(); saveDraft(html) }} className="btn-secondary" disabled={saving}>
+        <button onClick={saveDraft} className="btn-secondary" disabled={saving}>
           {saving ? 'Saving…' : 'Save draft'}
         </button>
       </div>
@@ -527,10 +525,7 @@ export default function CampaignNew() {
               )}
               <button
                 className="btn-primary"
-                onClick={() => {
-                  exportVisualHtml().then(html => saveDraft(html)).catch(() => {})
-                  setStep(2)
-                }}
+                onClick={() => setStep(2)}
                 disabled={!canProceed1}
               >
                 Next: Audience →
@@ -598,7 +593,7 @@ export default function CampaignNew() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <button className="btn-secondary" onClick={() => setStep(1)}>← Back</button>
-              <button className="btn-primary" onClick={() => { saveDraft(); setStep(3) }}
+              <button className="btn-primary" onClick={() => setStep(3)}
                 disabled={audienceCount === 0}>
                 Next: Review & Send →
               </button>
