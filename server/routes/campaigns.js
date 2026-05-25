@@ -68,7 +68,7 @@ router.get('/', async (req, res, next) => {
 
     const withStats = campaigns.map(c => {
       const total = c.sends.length
-      const delivered = c.sends.filter(s => s.status === 'delivered').length
+      const delivered = c.sends.filter(s => s.status === 'delivered' || s.status === 'sent').length
       return { ...c, sends: undefined, recipientCount: total, deliveredCount: delivered }
     })
 
@@ -258,15 +258,20 @@ router.get('/:id/stats', async (req, res, next) => {
     const allEvents = campaign.sends.flatMap(s => s.emailEvents)
     const count = (type) => allEvents.filter(e => e.event === type).length
 
+    const sentCount = campaign.sends.filter(s => s.status === 'sent' || s.status === 'delivered').length
+    // Fall back to sent count if no webhook delivery events exist yet
+    const deliveredFromWebhook = count('delivered')
+    const delivered = deliveredFromWebhook > 0 ? deliveredFromWebhook : sentCount
+
     const stats = {
       sent: campaign.sends.length,
-      delivered: count('delivered'),
+      delivered,
       opens: count('opened'),
       clicks: count('clicked'),
       bounces: count('bounced'),
       unsubscribes: count('unsubscribed'),
-      openRate: campaign.sends.length > 0 ? Math.round((count('opened') / campaign.sends.length) * 100) : 0,
-      clickRate: campaign.sends.length > 0 ? Math.round((count('clicked') / campaign.sends.length) * 100) : 0,
+      openRate: delivered > 0 ? Math.round((count('opened') / delivered) * 100) : 0,
+      clickRate: delivered > 0 ? Math.round((count('clicked') / delivered) * 100) : 0,
     }
 
     // 48h hourly timeline from sentAt
