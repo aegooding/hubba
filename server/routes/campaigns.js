@@ -100,7 +100,6 @@ router.post('/', async (req, res, next) => {
       fromName, fromEmail, replyTo, segmentRules,
     } = req.body
     if (!brandId || !name || !subject || !htmlBody || !fromName || !fromEmail) {
-      console.log('[campaign-create] missing fields:', { brandId: !!brandId, name: !!name, subject: !!subject, htmlBody: !!htmlBody, fromName: !!fromName, fromEmail: !!fromEmail })
       return res.status(400).json({ error: 'brandId, name, subject, htmlBody, fromName, fromEmail are required' })
     }
     const campaign = await prisma.campaign.create({
@@ -151,14 +150,12 @@ router.post('/:id/test', async (req, res, next) => {
       unsubscribeUrl: '#test-unsubscribe',
     })
 
-    console.log(`[test-send] to=${email} from=${campaign.fromEmail} subject=${campaign.subject}`)
-    const result = await resend.emails.send({
+    await resend.emails.send({
       from: `${campaign.fromName} <${campaign.fromEmail}>`,
       to: email,
       subject: `[TEST] ${campaign.subject}`,
       html,
     })
-    console.log(`[test-send] resend result:`, JSON.stringify(result))
 
     res.json({ success: true })
   } catch (err) {
