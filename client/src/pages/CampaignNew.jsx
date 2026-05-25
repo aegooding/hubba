@@ -235,12 +235,12 @@ export default function CampaignNew() {
     if (step === 2) fetchAudienceCount()
   }, [step, form.segmentRules, form.brandId])
 
-  async function saveDraft() {
-    await exportVisualHtml()
+  async function saveDraft(htmlOverride) {
     setSaving(true)
     try {
       const payload = {
         ...form,
+        ...(htmlOverride && { htmlBody: htmlOverride }),
         segmentRules: {
           status: form.segmentRules.status?.length ? form.segmentRules.status : undefined,
           source: form.segmentRules.source || undefined,
@@ -309,7 +309,7 @@ export default function CampaignNew() {
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 22, margin: 0, flex: 1 }}>
           {editId ? 'Edit Campaign' : 'New Campaign'}
         </h1>
-        <button onClick={saveDraft} className="btn-secondary" disabled={saving}>
+        <button onClick={async () => { const html = await exportVisualHtml(); saveDraft(html) }} className="btn-secondary" disabled={saving}>
           {saving ? 'Saving…' : 'Save draft'}
         </button>
       </div>
@@ -505,8 +505,12 @@ export default function CampaignNew() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
               <button
                 className="btn-primary"
-                onClick={async () => { await saveDraft(); setStep(2) }}
-                disabled={!canProceed1 || saving}
+                onClick={async () => {
+                  const html = await exportVisualHtml()
+                  saveDraft(html) // fire-and-forget, don't block step advance
+                  setStep(2)
+                }}
+                disabled={!canProceed1}
               >
                 Next: Audience →
               </button>
