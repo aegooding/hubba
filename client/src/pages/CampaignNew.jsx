@@ -295,7 +295,8 @@ export default function CampaignNew() {
     setSegment('status', current.includes(s) ? current.filter(x => x !== s) : [...current, s])
   }
 
-  const canProceed1 = form.name && form.subject && form.htmlBody && form.fromName && form.fromEmail && form.brandId
+  const canProceed1 = form.name && form.subject && form.fromName && form.fromEmail && form.brandId &&
+    (editorMode === 'visual' || form.htmlBody)
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -406,18 +407,46 @@ export default function CampaignNew() {
 
             {/* Editor area */}
             {editorMode === 'visual' ? (
-              <div style={{ border: '1px solid var(--hubba-border)', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
-                {!visualReady && (
-                  <div style={{
-                    position: 'absolute', inset: 0, height: 580,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'var(--hubba-text-muted)', fontSize: 14, background: 'var(--hubba-surface)',
-                  }}>
-                    Loading visual editor…
+              <>
+                <div style={{ border: '1px solid var(--hubba-border)', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+                  {!visualReady && (
+                    <div style={{
+                      position: 'absolute', inset: 0, height: 580,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'var(--hubba-text-muted)', fontSize: 14, background: 'var(--hubba-surface)',
+                    }}>
+                      Loading visual editor…
+                    </div>
+                  )}
+                  <div id="hubba-email-editor" style={{ height: 580 }} />
+                </div>
+                {/* Colour controls */}
+                {visualReady && (
+                  <div style={{ display: 'flex', gap: 20, marginTop: 10, alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <label className="label" style={{ margin: 0, whiteSpace: 'nowrap' }}>Background</label>
+                      <input
+                        type="color"
+                        defaultValue="#f4f4f4"
+                        onChange={e => window.unlayer?.setBodyValues({ backgroundColor: e.target.value })}
+                        style={{ width: 36, height: 30, border: '1px solid var(--hubba-border)', borderRadius: 4, cursor: 'pointer', padding: 2 }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <label className="label" style={{ margin: 0, whiteSpace: 'nowrap' }}>Container</label>
+                      <input
+                        type="color"
+                        defaultValue="#ffffff"
+                        onChange={e => window.unlayer?.setBodyValues({ contentBackgroundColor: e.target.value })}
+                        style={{ width: 36, height: 30, border: '1px solid var(--hubba-border)', borderRadius: 4, cursor: 'pointer', padding: 2 }}
+                      />
+                    </div>
+                    <span style={{ fontSize: 12, color: 'var(--hubba-text-muted)' }}>
+                      Tip: click any block to edit, drag from the right panel to add content
+                    </span>
                   </div>
                 )}
-                <div id="hubba-email-editor" style={{ height: 580 }} />
-              </div>
+              </>
             ) : (
               <div style={{ display: 'flex', gap: 16, height: 480 }}>
                 <div
@@ -476,8 +505,8 @@ export default function CampaignNew() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
               <button
                 className="btn-primary"
-                onClick={() => { saveDraft(); setStep(2) }}
-                disabled={!canProceed1}
+                onClick={async () => { await saveDraft(); setStep(2) }}
+                disabled={!canProceed1 || saving}
               >
                 Next: Audience →
               </button>
