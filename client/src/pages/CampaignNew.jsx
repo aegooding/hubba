@@ -1,10 +1,8 @@
-import { useState, useEffect, useRef, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Editor from '@monaco-editor/react'
 import api from '../lib/api'
 import { useBrand } from '../context/BrandContext'
-
-const EmailEditor = lazy(() => import('react-email-editor'))
 
 const STATUSES = ['NEW', 'CONTACTED', 'QUALIFIED', 'SUBMITTED', 'APPROVED', 'CONVERTED', 'LOST']
 const SOURCES = ['web-form', 'referral', 'facebook', 'google', 'phone', 'manual', 'csv-import', 'webhook']
@@ -52,7 +50,6 @@ export default function CampaignNew() {
   const [toast, setToast] = useState(null)
   const previewRef = useRef()
   const htmlFileRef = useRef()
-  const emailEditorRef = useRef()
   const [htmlDragOver, setHtmlDragOver] = useState(false)
   const [editorMode, setEditorMode] = useState('visual') // 'visual' | 'html'
   const [visualReady, setVisualReady] = useState(false)
@@ -141,10 +138,36 @@ export default function CampaignNew() {
     doc.open(); doc.write(preview); doc.close()
   }, [form.htmlBody, form.brandId, brands])
 
+  // Load Unlayer embed script once
+  useEffect(() => {
+    if (document.getElementById('unlayer-script')) {
+      if (window.unlayer && editorMode === 'visual') initUnlayer()
+      return
+    }
+    const script = document.createElement('script')
+    script.id = 'unlayer-script'
+    script.src = 'https://editor.unlayer.com/embed.js'
+    script.onload = () => { if (editorMode === 'visual') initUnlayer() }
+    document.head.appendChild(script)
+  }, [])
+
+  useEffect(() => {
+    if (editorMode === 'visual' && window.unlayer) initUnlayer()
+  }, [editorMode])
+
+  function initUnlayer() {
+    window.unlayer?.init({
+      id: 'hubba-email-editor',
+      displayMode: 'email',
+      appearance: { theme: 'light' },
+    })
+    setVisualReady(true)
+  }
+
   async function exportVisualHtml() {
-    if (editorMode !== 'visual' || !visualReady) return
+    if (editorMode !== 'visual' || !visualReady || !window.unlayer) return
     return new Promise((resolve) => {
-      emailEditorRef.current?.editor?.exportHtml(({ html }) => {
+      window.unlayer.exportHtml(({ html }) => {
         set('htmlBody', html)
         resolve(html)
       })
@@ -383,22 +406,17 @@ export default function CampaignNew() {
 
             {/* Editor area */}
             {editorMode === 'visual' ? (
-              <div style={{ border: '1px solid var(--hubba-border)', borderRadius: 8 }}>
-                <Suspense fallback={
-                  <div style={{ height: 580, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--hubba-text-muted)', fontSize: 14 }}>
+              <div style={{ border: '1px solid var(--hubba-border)', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+                {!visualReady && (
+                  <div style={{
+                    position: 'absolute', inset: 0, height: 580,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'var(--hubba-text-muted)', fontSize: 14, background: 'var(--hubba-surface)',
+                  }}>
                     Loading visual editor…
                   </div>
-                }>
-                  <EmailEditor
-                    ref={emailEditorRef}
-                    onReady={() => setVisualReady(true)}
-                    minHeight={580}
-                    options={{
-                      displayMode: 'email',
-                      appearance: { theme: 'light' },
-                    }}
-                  />
-                </Suspense>
+                )}
+                <div id="hubba-email-editor" style={{ height: 580 }} />
               </div>
             ) : (
               <div style={{ display: 'flex', gap: 16, height: 480 }}>
