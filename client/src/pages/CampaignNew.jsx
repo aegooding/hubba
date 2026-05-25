@@ -241,7 +241,8 @@ export default function CampaignNew() {
   async function saveDraft(htmlOverride) {
     setSaving(true)
     try {
-      const html = htmlOverride || (await exportVisualHtml()) || form.htmlBody
+      const FALLBACK_HTML = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;padding:32px;max-width:600px;margin:0 auto"><p>Hi {{first_name}},</p><p>Write your campaign content here.</p><p style="font-size:12px;color:#999;margin-top:32px;"><a href="{{unsubscribe_url}}">Unsubscribe</a></p></body></html>`
+      const html = htmlOverride || (await exportVisualHtml()) || form.htmlBody || FALLBACK_HTML
       const payload = {
         ...form,
         ...(html && { htmlBody: html }),
@@ -296,7 +297,7 @@ export default function CampaignNew() {
 
   function showToast(type, msg) {
     setToast({ type, msg })
-    setTimeout(() => setToast(null), 4000)
+    setTimeout(() => setToast(null), 8000)
   }
 
   function toggleStatus(s) {
