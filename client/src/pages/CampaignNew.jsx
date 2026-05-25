@@ -382,19 +382,14 @@ export default function CampaignNew() {
 
             {/* Editor area */}
             {editorMode === 'visual' ? (
-              <div style={{ border: '1px solid var(--hubba-border)', borderRadius: 8, overflow: 'hidden', height: 560 }}>
+              <div style={{ border: '1px solid var(--hubba-border)', borderRadius: 8 }}>
                 <EmailEditor
                   ref={emailEditorRef}
                   onReady={() => setVisualReady(true)}
-                  style={{ height: '100%' }}
+                  minHeight={580}
                   options={{
                     displayMode: 'email',
-                    appearance: {
-                      theme: 'light',
-                      panels: { tools: { dock: 'left' } },
-                    },
-                    tools: { image: { enabled: true } },
-                    features: { previewDevice: true },
+                    appearance: { theme: 'light' },
                   }}
                 />
               </div>
