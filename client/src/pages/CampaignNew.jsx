@@ -505,7 +505,19 @@ export default function CampaignNew() {
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginTop: 20 }}>
+              {!canProceed1 && (
+                <span style={{ fontSize: 12, color: 'var(--hubba-text-muted)' }}>
+                  Missing: {[
+                    !form.name && 'Campaign Name',
+                    !form.subject && 'Subject',
+                    !form.fromName && 'From Name',
+                    !form.fromEmail && 'From Email',
+                    !form.brandId && 'Brand',
+                    editorMode === 'html' && !form.htmlBody && 'HTML Body',
+                  ].filter(Boolean).join(', ')}
+                </span>
+              )}
               <button
                 className="btn-primary"
                 onClick={() => {
