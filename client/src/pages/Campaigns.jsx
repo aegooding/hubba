@@ -20,7 +20,7 @@ export default function Campaigns() {
   const fetch = useCallback(async () => {
     setLoading(true)
     try {
-      const params = activeBrand.slug !== 'all' ? { brandId: activeBrand.slug } : {}
+      const params = activeBrand.slug !== 'all' ? { brandId: activeBrand.id } : {}
       const { data } = await api.get('/api/campaigns', { params })
       setCampaigns(data.campaigns)
     } finally {

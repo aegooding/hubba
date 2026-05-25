@@ -20,7 +20,7 @@ export default function Referrers() {
   const fetch = useCallback(async () => {
     setLoading(true)
     try {
-      const params = activeBrand.slug !== 'all' ? { brandId: activeBrand.slug } : {}
+      const params = activeBrand.slug !== 'all' ? { brandId: activeBrand.id } : {}
       const { data } = await api.get('/api/referrers', { params })
       setReferrers(data.referrers)
     } finally {

@@ -14,7 +14,7 @@ export function useLeads(filters = {}) {
     setError(null)
     try {
       const params = { ...filters }
-      if (activeBrand.slug !== 'all') params.brandId = activeBrand.slug
+      if (activeBrand.slug !== 'all') params.brandId = activeBrand.id
       const { data } = await api.get('/api/leads', { params })
       setLeads(data.leads)
       setTotal(data.total)
