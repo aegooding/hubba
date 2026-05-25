@@ -241,9 +241,10 @@ export default function CampaignNew() {
   async function saveDraft(htmlOverride) {
     setSaving(true)
     try {
+      const html = htmlOverride || (await exportVisualHtml()) || form.htmlBody
       const payload = {
         ...form,
-        ...(htmlOverride && { htmlBody: htmlOverride }),
+        ...(html && { htmlBody: html }),
         segmentRules: {
           status: form.segmentRules.status?.length ? form.segmentRules.status : undefined,
           source: form.segmentRules.source || undefined,
@@ -252,12 +253,15 @@ export default function CampaignNew() {
       }
       if (campaignId) {
         await api.patch(`/api/campaigns/${campaignId}`, payload)
+        return campaignId
       } else {
         const { data } = await api.post('/api/campaigns', payload)
         setCampaignId(data.id)
+        return data.id
       }
     } catch (err) {
       showToast('error', err.response?.data?.error || 'Failed to save')
+      return null
     } finally {
       setSaving(false)
     }
@@ -266,8 +270,9 @@ export default function CampaignNew() {
   async function handleSendTest() {
     if (!testEmail) return
     try {
-      await saveDraft()
-      await api.post(`/api/campaigns/${campaignId}/test`, { email: testEmail })
+      const id = await saveDraft()
+      if (!id) return
+      await api.post(`/api/campaigns/${id}/test`, { email: testEmail })
       setTestSent(true)
       setTimeout(() => setTestSent(false), 3000)
     } catch (err) {
@@ -278,8 +283,9 @@ export default function CampaignNew() {
   async function handleSend() {
     setSending(true)
     try {
-      await saveDraft()
-      const { data } = await api.post(`/api/campaigns/${campaignId}/send`)
+      const id = await saveDraft()
+      if (!id) { setSending(false); return }
+      const { data } = await api.post(`/api/campaigns/${id}/send`)
       showToast('success', `Campaign sent to ${data.recipientCount} recipients`)
       setTimeout(() => navigate('/campaigns'), 2000)
     } catch (err) {
@@ -637,7 +643,7 @@ export default function CampaignNew() {
                 <button
                   className="btn-secondary"
                   onClick={handleSendTest}
-                  disabled={!testEmail || !campaignId}
+                  disabled={!testEmail || saving}
                 >
                   {testSent ? '✓ Sent!' : 'Send test'}
                 </button>
