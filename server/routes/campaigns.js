@@ -100,6 +100,7 @@ router.post('/', async (req, res, next) => {
       fromName, fromEmail, replyTo, segmentRules,
     } = req.body
     if (!brandId || !name || !subject || !htmlBody || !fromName || !fromEmail) {
+      console.log('[campaign-create] missing fields:', { brandId: !!brandId, name: !!name, subject: !!subject, htmlBody: !!htmlBody, fromName: !!fromName, fromEmail: !!fromEmail })
       return res.status(400).json({ error: 'brandId, name, subject, htmlBody, fromName, fromEmail are required' })
     }
     const campaign = await prisma.campaign.create({
