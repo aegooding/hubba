@@ -150,12 +150,14 @@ router.post('/:id/test', async (req, res, next) => {
       unsubscribeUrl: '#test-unsubscribe',
     })
 
-    await resend.emails.send({
+    console.log(`[test-send] to=${email} from=${campaign.fromEmail} subject=${campaign.subject}`)
+    const result = await resend.emails.send({
       from: `${campaign.fromName} <${campaign.fromEmail}>`,
       to: email,
       subject: `[TEST] ${campaign.subject}`,
       html,
     })
+    console.log(`[test-send] resend result:`, JSON.stringify(result))
 
     res.json({ success: true })
   } catch (err) {

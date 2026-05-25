@@ -8,14 +8,9 @@ async function requireAuth(req, res, next) {
 
   const token = authHeader.slice(7)
 
-  // Log what env vars we actually have (remove after debugging)
-  console.log('SUPABASE_URL:', process.env.SUPABASE_URL)
-  console.log('JWT_SECRET defined:', !!process.env.SUPABASE_JWT_SECRET)
-
   try {
     const secret = process.env.SUPABASE_JWT_SECRET
     if (!secret) {
-      // Fallback: decode without verification for local dev
       const decoded = jwt.decode(token)
       if (!decoded?.sub) return res.status(401).json({ error: 'Invalid token' })
       req.user = { id: decoded.sub, email: decoded.email }
