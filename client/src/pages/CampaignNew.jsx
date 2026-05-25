@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Editor from '@monaco-editor/react'
+import EmailEditor from 'react-email-editor'
 import api from '../lib/api'
 import { useBrand } from '../context/BrandContext'
 
@@ -50,7 +51,10 @@ export default function CampaignNew() {
   const [toast, setToast] = useState(null)
   const previewRef = useRef()
   const htmlFileRef = useRef()
+  const emailEditorRef = useRef()
   const [htmlDragOver, setHtmlDragOver] = useState(false)
+  const [editorMode, setEditorMode] = useState('visual') // 'visual' | 'html'
+  const [visualReady, setVisualReady] = useState(false)
 
   const [form, setForm] = useState({
     brandId: activeBrand.slug !== 'all' ? '' : '',
@@ -136,6 +140,25 @@ export default function CampaignNew() {
     doc.open(); doc.write(preview); doc.close()
   }, [form.htmlBody, form.brandId, brands])
 
+  async function exportVisualHtml() {
+    if (editorMode !== 'visual' || !visualReady) return
+    return new Promise((resolve) => {
+      emailEditorRef.current?.editor?.exportHtml(({ html }) => {
+        set('htmlBody', html)
+        resolve(html)
+      })
+    })
+  }
+
+  async function switchToHtml() {
+    await exportVisualHtml()
+    setEditorMode('html')
+  }
+
+  function switchToVisual() {
+    setEditorMode('visual')
+  }
+
   function readHtmlFile(file) {
     if (!file) return
     const reader = new FileReader()
@@ -189,6 +212,7 @@ export default function CampaignNew() {
   }, [step, form.segmentRules, form.brandId])
 
   async function saveDraft() {
+    await exportVisualHtml()
     setSaving(true)
     try {
       const payload = {
@@ -307,99 +331,127 @@ export default function CampaignNew() {
               </div>
             </div>
 
-            {/* Template picker + preview toggle */}
+            {/* Editor mode toggle + toolbar */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <label className="label" style={{ margin: 0 }}>HTML Body *</label>
-                <select
-                  style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid var(--hubba-border)', fontSize: 13, background: 'white' }}
-                  defaultValue=""
-                  onChange={e => e.target.value && loadTemplate(e.target.value)}
-                >
-                  <option value="">Load template…</option>
-                  {templateList.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                </select>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  style={{ fontSize: 12, padding: '4px 10px' }}
-                  onClick={() => htmlFileRef.current.click()}
-                >
-                  ↑ Upload HTML
-                </button>
-                <input
-                  ref={htmlFileRef}
-                  type="file"
-                  accept=".html,.htm"
-                  style={{ display: 'none' }}
-                  onChange={e => readHtmlFile(e.target.files[0])}
-                />
+                <label className="label" style={{ margin: 0 }}>Email Body *</label>
+                {/* Mode toggle */}
+                <div style={{ display: 'flex', background: 'var(--hubba-surface-2)', borderRadius: 6, padding: 2 }}>
+                  {[['visual', '🎨 Visual'], ['html', '</> HTML']].map(([mode, label]) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => mode === 'html' ? switchToHtml() : switchToVisual()}
+                      style={{
+                        padding: '4px 12px', borderRadius: 4, border: 'none',
+                        fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                        background: editorMode === mode ? 'white' : 'transparent',
+                        color: editorMode === mode ? 'var(--hubba-text)' : 'var(--hubba-text-muted)',
+                        boxShadow: editorMode === mode ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                        transition: 'all 0.15s',
+                      }}
+                    >{label}</button>
+                  ))}
+                </div>
+                {/* HTML-mode only controls */}
+                {editorMode === 'html' && (
+                  <>
+                    <select
+                      style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid var(--hubba-border)', fontSize: 13, background: 'white' }}
+                      defaultValue=""
+                      onChange={e => e.target.value && loadTemplate(e.target.value)}
+                    >
+                      <option value="">Load template…</option>
+                      {templateList.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                    <button type="button" className="btn-secondary" style={{ fontSize: 12, padding: '4px 10px' }}
+                      onClick={() => htmlFileRef.current.click()}>
+                      ↑ Upload HTML
+                    </button>
+                    <input ref={htmlFileRef} type="file" accept=".html,.htm" style={{ display: 'none' }}
+                      onChange={e => readHtmlFile(e.target.files[0])} />
+                  </>
+                )}
               </div>
-              <button
-                onClick={() => setMobilePreview(p => !p)}
-                className="btn-ghost"
-                style={{ fontSize: 13 }}
-              >
-                {mobilePreview ? '🖥 Desktop' : '📱 Mobile'}
-              </button>
+              {editorMode === 'html' && (
+                <button onClick={() => setMobilePreview(p => !p)} className="btn-ghost" style={{ fontSize: 13 }}>
+                  {mobilePreview ? '🖥 Desktop' : '📱 Mobile'}
+                </button>
+              )}
             </div>
 
-            {/* Editor + preview */}
-            <div style={{ display: 'flex', gap: 16, height: 480 }}>
-              <div
-                style={{
-                  flex: 1, borderRadius: 8, overflow: 'hidden',
-                  border: `2px ${htmlDragOver ? 'dashed var(--hubba-amber)' : 'solid var(--hubba-border)'}`,
-                  background: htmlDragOver ? 'rgba(251,176,64,0.04)' : undefined,
-                  transition: 'border-color 0.15s',
-                }}
-                onDragOver={e => { e.preventDefault(); setHtmlDragOver(true) }}
-                onDragLeave={() => setHtmlDragOver(false)}
-                onDrop={handleHtmlDrop}
-              >
-                <Editor
-                  language="html"
-                  value={form.htmlBody}
-                  onChange={val => set('htmlBody', val || '')}
-                  theme="vs-light"
+            {/* Editor area */}
+            {editorMode === 'visual' ? (
+              <div style={{ border: '1px solid var(--hubba-border)', borderRadius: 8, overflow: 'hidden', height: 560 }}>
+                <EmailEditor
+                  ref={emailEditorRef}
+                  onReady={() => setVisualReady(true)}
+                  style={{ height: '100%' }}
                   options={{
-                    minimap: { enabled: false },
-                    fontSize: 13,
-                    lineNumbers: 'off',
-                    wordWrap: 'on',
-                    scrollBeyondLastLine: false,
-                    padding: { top: 12 },
+                    displayMode: 'email',
+                    appearance: {
+                      theme: 'light',
+                      panels: { tools: { dock: 'left' } },
+                    },
+                    tools: { image: { enabled: true } },
+                    features: { previewDevice: true },
                   }}
                 />
               </div>
-              <div style={{
-                width: mobilePreview ? 375 : '50%', flexShrink: 0,
-                border: '1px solid var(--hubba-border)', borderRadius: 8, overflow: 'hidden',
-                transition: 'width 0.2s',
-                display: 'flex', flexDirection: 'column',
-              }}>
-                <div style={{
-                  background: 'var(--hubba-surface-2)', padding: '6px 12px',
-                  fontSize: 11, color: 'var(--hubba-text-muted)', fontWeight: 600,
-                  textTransform: 'uppercase', letterSpacing: '0.05em',
-                }}>
-                  Preview {mobilePreview ? '(375px)' : ''}
+            ) : (
+              <div style={{ display: 'flex', gap: 16, height: 480 }}>
+                <div
+                  style={{
+                    flex: 1, borderRadius: 8, overflow: 'hidden',
+                    border: `2px ${htmlDragOver ? 'dashed var(--hubba-amber)' : 'solid var(--hubba-border)'}`,
+                    background: htmlDragOver ? 'rgba(251,176,64,0.04)' : undefined,
+                    transition: 'border-color 0.15s',
+                  }}
+                  onDragOver={e => { e.preventDefault(); setHtmlDragOver(true) }}
+                  onDragLeave={() => setHtmlDragOver(false)}
+                  onDrop={handleHtmlDrop}
+                >
+                  <Editor
+                    language="html"
+                    value={form.htmlBody}
+                    onChange={val => set('htmlBody', val || '')}
+                    theme="vs-light"
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 13,
+                      lineNumbers: 'off',
+                      wordWrap: 'on',
+                      scrollBeyondLastLine: false,
+                      padding: { top: 12 },
+                    }}
+                  />
                 </div>
-                <iframe
-                  ref={previewRef}
-                  style={{ flex: 1, border: 'none', background: 'white' }}
-                  title="email-preview"
-                />
+                <div style={{
+                  width: mobilePreview ? 375 : '50%', flexShrink: 0,
+                  border: '1px solid var(--hubba-border)', borderRadius: 8, overflow: 'hidden',
+                  transition: 'width 0.2s', display: 'flex', flexDirection: 'column',
+                }}>
+                  <div style={{
+                    background: 'var(--hubba-surface-2)', padding: '6px 12px',
+                    fontSize: 11, color: 'var(--hubba-text-muted)', fontWeight: 600,
+                    textTransform: 'uppercase', letterSpacing: '0.05em',
+                  }}>
+                    Preview {mobilePreview ? '(375px)' : ''}
+                  </div>
+                  <iframe ref={previewRef} style={{ flex: 1, border: 'none', background: 'white' }} title="email-preview" />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Merge tag hint */}
-            <div style={{ marginTop: 8, fontSize: 12, color: 'var(--hubba-text-muted)' }}>
-              Merge tags:{' '}
-              {['{{first_name}}', '{{brand_name}}', '{{brand_logo}}', '{{brand_logo_url}}', '{{unsubscribe_url}}'].map(tag => (
-                <code key={tag} style={{ fontFamily: 'var(--font-mono)', background: 'var(--hubba-surface-2)', padding: '1px 5px', borderRadius: 3, marginRight: 5 }}>{tag}</code>
-              ))}
-            </div>
+            {editorMode === 'html' && (
+              <div style={{ marginTop: 8, fontSize: 12, color: 'var(--hubba-text-muted)' }}>
+                Merge tags:{' '}
+                {['{{first_name}}', '{{brand_name}}', '{{brand_logo}}', '{{brand_logo_url}}', '{{unsubscribe_url}}'].map(tag => (
+                  <code key={tag} style={{ fontFamily: 'var(--font-mono)', background: 'var(--hubba-surface-2)', padding: '1px 5px', borderRadius: 3, marginRight: 5 }}>{tag}</code>
+                ))}
+              </div>
+            )}
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
               <button
