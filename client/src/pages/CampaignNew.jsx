@@ -165,13 +165,16 @@ export default function CampaignNew() {
   }
 
   async function exportVisualHtml() {
-    if (editorMode !== 'visual' || !visualReady || !window.unlayer) return
-    return new Promise((resolve) => {
-      window.unlayer.exportHtml(({ html }) => {
-        set('htmlBody', html)
-        resolve(html)
-      })
-    })
+    if (editorMode !== 'visual' || !window.unlayer) return null
+    return Promise.race([
+      new Promise((resolve) => {
+        window.unlayer.exportHtml(({ html }) => {
+          if (html) set('htmlBody', html)
+          resolve(html || null)
+        })
+      }),
+      new Promise((resolve) => setTimeout(() => resolve(null), 5000)),
+    ])
   }
 
   async function switchToHtml() {
@@ -505,9 +508,8 @@ export default function CampaignNew() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
               <button
                 className="btn-primary"
-                onClick={async () => {
-                  const html = await exportVisualHtml()
-                  saveDraft(html) // fire-and-forget, don't block step advance
+                onClick={() => {
+                  exportVisualHtml().then(html => saveDraft(html)).catch(() => {})
                   setStep(2)
                 }}
                 disabled={!canProceed1}
