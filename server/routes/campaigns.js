@@ -377,6 +377,10 @@ router.post('/generate-email', async (req, res, next) => {
 
     const brand = brandId ? await prisma.brand.findUnique({ where: { id: brandId } }) : null
 
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(500).json({ error: 'ANTHROPIC_API_KEY is not configured on the server' })
+    }
+
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
     const systemPrompt = `You are an expert HTML email designer. You write clean, beautiful, conversion-focused emails that render perfectly across all email clients including Gmail, Outlook, and Apple Mail.
@@ -404,8 +408,10 @@ MERGE TAGS — include these exactly where appropriate:
       ? `Brand: ${brand.name}. Primary colour: ${brand.primaryColor || '#333333'}. Logo is available via {{brand_logo}} merge tag.`
       : ''
 
+    console.log('[generate-email] starting generation for brand:', brand?.name)
+
     const message = await anthropic.messages.create({
-      model: 'claude-opus-4-7',
+      model: 'claude-sonnet-4-6',
       max_tokens: 4096,
       messages: [{
         role: 'user',
@@ -413,6 +419,8 @@ MERGE TAGS — include these exactly where appropriate:
       }],
       system: systemPrompt,
     })
+
+    console.log('[generate-email] done, tokens used:', message.usage)
 
     const html = message.content[0].text
     res.json({ html })
