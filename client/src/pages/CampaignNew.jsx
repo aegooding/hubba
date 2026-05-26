@@ -48,6 +48,9 @@ export default function CampaignNew() {
   const [testSent, setTestSent] = useState(false)
   const [campaignId, setCampaignId] = useState(editId || null)
   const [toast, setToast] = useState(null)
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [aiOpen, setAiOpen] = useState(false)
+  const [aiGenerating, setAiGenerating] = useState(false)
   const previewRef = useRef()
   const htmlFileRef = useRef()
   const [htmlDragOver, setHtmlDragOver] = useState(false)
@@ -293,6 +296,26 @@ export default function CampaignNew() {
     }
   }
 
+  async function handleGenerate() {
+    if (!aiPrompt.trim()) return
+    setAiGenerating(true)
+    try {
+      const { data } = await api.post('/api/campaigns/generate-email', {
+        prompt: aiPrompt,
+        brandId: form.brandId || undefined,
+      })
+      set('htmlBody', data.html)
+      setEditorMode('html')
+      setAiOpen(false)
+      setAiPrompt('')
+      showToast('success', 'Email generated — review it in the editor below')
+    } catch (err) {
+      showToast('error', err.response?.data?.error || 'Generation failed')
+    } finally {
+      setAiGenerating(false)
+    }
+  }
+
   function showToast(type, msg) {
     setToast({ type, msg })
     setTimeout(() => setToast(null), 8000)
@@ -362,6 +385,62 @@ export default function CampaignNew() {
                 <label className="label">From Email *</label>
                 <input className="input" type="email" value={form.fromEmail} onChange={e => set('fromEmail', e.target.value)} placeholder="hello@loanfair.com.au" />
               </div>
+            </div>
+
+            {/* AI generation panel */}
+            <div style={{ marginBottom: 16 }}>
+              {!aiOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setAiOpen(true)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '10px 16px', borderRadius: 8, cursor: 'pointer',
+                    border: '1.5px dashed var(--hubba-amber)',
+                    background: 'rgba(251,176,64,0.05)', width: '100%',
+                    fontSize: 14, fontWeight: 500, color: 'var(--hubba-text)',
+                    transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(251,176,64,0.1)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(251,176,64,0.05)'}
+                >
+                  <span style={{ fontSize: 18 }}>✦</span>
+                  Generate email with AI
+                </button>
+              ) : (
+                <div style={{
+                  border: '1.5px solid var(--hubba-amber)', borderRadius: 8,
+                  padding: 16, background: 'rgba(251,176,64,0.04)',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                    <span style={{ fontSize: 14, fontWeight: 600 }}>✦ Generate email with AI</span>
+                    <button type="button" onClick={() => setAiOpen(false)} className="btn-ghost" style={{ fontSize: 12, padding: '2px 8px' }}>✕</button>
+                  </div>
+                  <textarea
+                    value={aiPrompt}
+                    onChange={e => setAiPrompt(e.target.value)}
+                    placeholder={`Describe the email you want — tone, purpose, key messages, sections, CTA.\n\nExample: "Launch announcement for klasp. Dark green hero section, headline 'One platform. Every channel.' Brief overview of 4 key features, a pricing teaser ($100/month), and a CTA to register for early access at klasptech.com.au"`}
+                    style={{
+                      width: '100%', minHeight: 100, padding: '10px 12px',
+                      borderRadius: 6, border: '1px solid var(--hubba-border)',
+                      fontSize: 13, lineHeight: 1.5, resize: 'vertical',
+                      fontFamily: 'inherit', boxSizing: 'border-box',
+                    }}
+                    onKeyDown={e => e.key === 'Enter' && e.metaKey && handleGenerate()}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10, gap: 8 }}>
+                    <button type="button" className="btn-secondary" onClick={() => setAiOpen(false)}>Cancel</button>
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      onClick={handleGenerate}
+                      disabled={!aiPrompt.trim() || aiGenerating}
+                    >
+                      {aiGenerating ? 'Generating…' : '✦ Generate'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Editor mode toggle + toolbar */}

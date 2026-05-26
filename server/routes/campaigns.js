@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const jwt = require('jsonwebtoken')
 const juice = require('juice')
+const Anthropic = require('@anthropic-ai/sdk')
 const prisma = require('../lib/prisma')
 const resend = require('../lib/resend')
 const { templates } = require('../lib/emailTemplates')
@@ -366,6 +367,58 @@ router.get('/templates/:id', (req, res) => {
   const html = templates[req.params.id]
   if (!html) return res.status(404).json({ error: 'Template not found' })
   res.json({ html })
+})
+
+// POST /api/campaigns/generate-email
+router.post('/generate-email', async (req, res, next) => {
+  try {
+    const { prompt, brandId } = req.body
+    if (!prompt) return res.status(400).json({ error: 'prompt is required' })
+
+    const brand = brandId ? await prisma.brand.findUnique({ where: { id: brandId } }) : null
+
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+    const systemPrompt = `You are an expert HTML email designer. You write clean, beautiful, conversion-focused emails that render perfectly across all email clients including Gmail, Outlook, and Apple Mail.
+
+STRICT RULES — you must follow all of these:
+1. All CSS must be inline (style="..."). Never use <style> blocks or external stylesheets.
+2. Max width 600px, centred with margin:0 auto.
+3. Use table-based layouts for any multi-column sections (display:table or actual <table>).
+4. No SVG elements — use text or <img> tags only.
+5. No position:absolute, no position:relative, no flexbox, no CSS grid, no overflow:hidden.
+6. No @import, no web fonts. Font stacks only: Arial,Helvetica,sans-serif or Georgia,'Times New Roman',serif.
+7. All <a> elements must have color and text-decoration set as inline styles. Button links must have color:#ffffff !important (or the correct contrast colour) inline.
+8. Images must have alt text, explicit width and height attributes, style="display:block;border:0;".
+9. No <script>, no <form>, no interactive elements.
+10. Output only the complete HTML document — no explanation, no markdown fences.
+
+MERGE TAGS — include these exactly where appropriate:
+- {{first_name}} — recipient first name (use in greeting)
+- {{brand_name}} — the sender's brand name
+- {{brand_logo}} — expands to a full <img> tag for the brand logo; use this in the header
+- {{brand_logo_url}} — just the logo URL; use as src in a footer <img> if needed
+- {{unsubscribe_url}} — must appear as an unsubscribe link in the footer`
+
+    const brandContext = brand
+      ? `Brand: ${brand.name}. Primary colour: ${brand.primaryColor || '#333333'}. Logo is available via {{brand_logo}} merge tag.`
+      : ''
+
+    const message = await anthropic.messages.create({
+      model: 'claude-opus-4-7',
+      max_tokens: 4096,
+      messages: [{
+        role: 'user',
+        content: `${brandContext ? brandContext + '\n\n' : ''}Create an HTML email for the following:\n\n${prompt}`,
+      }],
+      system: systemPrompt,
+    })
+
+    const html = message.content[0].text
+    res.json({ html })
+  } catch (err) {
+    next(err)
+  }
 })
 
 module.exports = router
