@@ -591,12 +591,19 @@ export default function CampaignNew() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <button className="btn-secondary" onClick={() => setStep(1)}>← Back</button>
-              <button className="btn-primary" onClick={() => setStep(3)}
-                disabled={audienceCount === 0}>
-                Next: Review & Send →
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {audienceCount === 0 && (
+                  <span style={{ fontSize: 12, color: 'var(--hubba-text-muted)' }}>
+                    No matching contacts — you can still proceed, but the send may fail.
+                  </span>
+                )}
+                <button className="btn-primary" onClick={() => setStep(3)}
+                  disabled={audienceCount === null}>
+                  Next: Review & Send →
+                </button>
+              </div>
             </div>
           </div>
         )}
