@@ -51,6 +51,7 @@ export default function CampaignNew() {
   const [aiPrompt, setAiPrompt] = useState('')
   const [aiOpen, setAiOpen] = useState(false)
   const [aiGenerating, setAiGenerating] = useState(false)
+  const [editorKey, setEditorKey] = useState(0)
   const previewRef = useRef()
   const editorRef = useRef()
   const htmlFileRef = useRef()
@@ -307,6 +308,7 @@ export default function CampaignNew() {
       })
       set('htmlBody', data.html)
       setEditorMode('html')
+      setEditorKey(k => k + 1)
       setAiOpen(false)
       setAiPrompt('')
       showToast('success', 'Email generated — edit it in the HTML editor below')
@@ -553,6 +555,7 @@ export default function CampaignNew() {
                   onDrop={handleHtmlDrop}
                 >
                   <Editor
+                    key={editorKey}
                     language="html"
                     value={form.htmlBody}
                     onChange={val => set('htmlBody', val || '')}
