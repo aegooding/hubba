@@ -212,10 +212,12 @@ router.post('/:id/send', async (req, res, next) => {
       include: { contact: true },
     })
 
-    // Batch dispatch — 50 at a time
-    const BATCH = 50
+    // Dispatch sequentially in batches of 2 to stay under Resend's 2/s rate limit
+    const BATCH = 2
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms))
     for (let i = 0; i < sends.length; i += BATCH) {
       const batch = sends.slice(i, i + BATCH)
+      if (i > 0) await sleep(1100)
       await Promise.allSettled(batch.map(async (send) => {
         const html = applyMergeTags(campaign.htmlBody, {
           firstName: send.contact.firstName,
