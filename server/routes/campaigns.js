@@ -146,27 +146,6 @@ router.patch('/:id', async (req, res, next) => {
   }
 })
 
-// GET /api/campaigns/:id/preview — render final merged HTML in browser (debug)
-router.get('/:id/preview', async (req, res, next) => {
-  try {
-    const campaign = await prisma.campaign.findUnique({
-      where: { id: req.params.id },
-      include: { brand: true },
-    })
-    if (!campaign) return res.status(404).send('Campaign not found')
-    const html = applyMergeTags(campaign.htmlBody, {
-      firstName: 'Preview',
-      brandName: campaign.brand.name,
-      brandLogoUrl: campaign.brand.logoUrl,
-      unsubscribeUrl: '#preview-unsubscribe',
-    })
-    res.setHeader('Content-Type', 'text/html')
-    res.send(html)
-  } catch (err) {
-    next(err)
-  }
-})
-
 // POST /api/campaigns/:id/test — send to a single address
 router.post('/:id/test', async (req, res, next) => {
   try {

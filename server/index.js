@@ -70,6 +70,31 @@ app.post('/api/contacts/unsubscribe', async (req, res, next) => {
   }
 })
 
+// Public debug preview — no auth required, browser-accessible
+app.get('/api/campaigns/:id/preview', async (req, res, next) => {
+  try {
+    const juice = require('juice')
+    const prisma = require('./lib/prisma')
+    const campaign = await prisma.campaign.findUnique({
+      where: { id: req.params.id },
+      include: { brand: true },
+    })
+    if (!campaign) return res.status(404).send('Campaign not found')
+    const { name: brandName, logoUrl: brandLogoUrl } = campaign.brand
+    const logoImg = brandLogoUrl
+      ? `<img src="${brandLogoUrl}" alt="${brandName}" height="48" border="0" style="display:block;border:0;outline:none;height:48px;max-height:48px;max-width:100%;" />`
+      : `<span style="display:block;font-size:22px;font-weight:700;color:white;font-family:Arial,sans-serif;">${brandName}</span>`
+    const html = juice(campaign.htmlBody
+      .replace(/\{\{first_name\}\}/g, 'Preview')
+      .replace(/\{\{brand_name\}\}/g, brandName || '')
+      .replace(/\{\{unsubscribe_url\}\}/g, '#preview')
+      .replace(/\{\{brand_logo\}\}/g, logoImg)
+      .replace(/\{\{brand_logo_url\}\}/g, brandLogoUrl || ''))
+    res.setHeader('Content-Type', 'text/html')
+    res.send(html)
+  } catch (err) { next(err) }
+})
+
 // Authenticated routes
 app.use('/api/brands', requireAuth, brandsRouter)
 app.use('/api/leads', requireAuth, leadsRouter)
