@@ -52,6 +52,7 @@ export default function CampaignNew() {
   const [aiOpen, setAiOpen] = useState(false)
   const [aiGenerating, setAiGenerating] = useState(false)
   const previewRef = useRef()
+  const editorRef = useRef()
   const htmlFileRef = useRef()
   const [htmlDragOver, setHtmlDragOver] = useState(false)
   const [editorMode, setEditorMode] = useState('visual') // 'visual' | 'html'
@@ -309,6 +310,7 @@ export default function CampaignNew() {
       setAiOpen(false)
       setAiPrompt('')
       showToast('success', 'Email generated — edit it in the HTML editor below')
+      setTimeout(() => editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
     } catch (err) {
       showToast('error', err.response?.data?.error || 'Generation failed')
     } finally {
@@ -495,6 +497,7 @@ export default function CampaignNew() {
             </div>
 
             {/* Editor area */}
+            <div ref={editorRef} />
             {editorMode === 'visual' ? (
               <>
                 <div style={{ border: '1px solid var(--hubba-border)', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
