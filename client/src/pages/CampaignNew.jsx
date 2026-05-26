@@ -305,10 +305,22 @@ export default function CampaignNew() {
         brandId: form.brandId || undefined,
       })
       set('htmlBody', data.html)
-      setEditorMode('html')
       setAiOpen(false)
       setAiPrompt('')
-      showToast('success', 'Email generated — review it in the editor below')
+      // Load into Unlayer visual editor if available, otherwise fall back to HTML mode
+      if (window.unlayer) {
+        setEditorMode('visual')
+        setTimeout(() => {
+          window.unlayer.loadHtml({ html: data.html }, () => {
+            // re-sync htmlBody after Unlayer processes it
+            window.unlayer.exportHtml(({ html }) => { if (html) set('htmlBody', html) })
+          })
+        }, 100)
+        showToast('success', 'Email generated — edit it in the visual editor below')
+      } else {
+        setEditorMode('html')
+        showToast('success', 'Email generated — edit it in the HTML editor below')
+      }
     } catch (err) {
       showToast('error', err.response?.data?.error || 'Generation failed')
     } finally {
@@ -390,23 +402,25 @@ export default function CampaignNew() {
             {/* AI generation panel */}
             <div style={{ marginBottom: 16 }}>
               {!aiOpen ? (
-                <button
-                  type="button"
-                  onClick={() => setAiOpen(true)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '10px 16px', borderRadius: 8, cursor: 'pointer',
-                    border: '1.5px dashed var(--hubba-amber)',
-                    background: 'rgba(251,176,64,0.05)', width: '100%',
-                    fontSize: 14, fontWeight: 500, color: 'var(--hubba-text)',
-                    transition: 'background 0.15s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(251,176,64,0.1)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(251,176,64,0.05)'}
-                >
-                  <span style={{ fontSize: 18 }}>✦</span>
-                  Generate email with AI
-                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setAiOpen(true)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '10px 16px', borderRadius: 8, cursor: 'pointer',
+                      border: '1.5px dashed var(--hubba-amber)',
+                      background: 'rgba(251,176,64,0.05)', flex: 1,
+                      fontSize: 14, fontWeight: 500, color: 'var(--hubba-text)',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(251,176,64,0.1)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(251,176,64,0.05)'}
+                  >
+                    <span style={{ fontSize: 18 }}>✦</span>
+                    {form.htmlBody ? 'Regenerate with AI' : 'Generate email with AI'}
+                  </button>
+                </div>
               ) : (
                 <div style={{
                   border: '1.5px solid var(--hubba-amber)', borderRadius: 8,
