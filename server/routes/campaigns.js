@@ -412,7 +412,7 @@ MERGE TAGS — include these exactly where appropriate:
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
+      max_tokens: 8000,
       messages: [{
         role: 'user',
         content: `${brandContext ? brandContext + '\n\n' : ''}Create an HTML email for the following:\n\n${prompt}`,

@@ -305,22 +305,10 @@ export default function CampaignNew() {
         brandId: form.brandId || undefined,
       })
       set('htmlBody', data.html)
+      setEditorMode('html')
       setAiOpen(false)
       setAiPrompt('')
-      // Load into Unlayer visual editor if available, otherwise fall back to HTML mode
-      if (window.unlayer) {
-        setEditorMode('visual')
-        setTimeout(() => {
-          window.unlayer.loadHtml({ html: data.html }, () => {
-            // re-sync htmlBody after Unlayer processes it
-            window.unlayer.exportHtml(({ html }) => { if (html) set('htmlBody', html) })
-          })
-        }, 100)
-        showToast('success', 'Email generated — edit it in the visual editor below')
-      } else {
-        setEditorMode('html')
-        showToast('success', 'Email generated — edit it in the HTML editor below')
-      }
+      showToast('success', 'Email generated — edit it in the HTML editor below')
     } catch (err) {
       showToast('error', err.response?.data?.error || 'Generation failed')
     } finally {
