@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const jwt = require('jsonwebtoken')
 const juice = require('juice')
+const cheerio = require('cheerio')
 const Anthropic = require('@anthropic-ai/sdk')
 const prisma = require('../lib/prisma')
 const resend = require('../lib/resend')
@@ -367,6 +368,49 @@ router.get('/templates/:id', (req, res) => {
   const html = templates[req.params.id]
   if (!html) return res.status(404).json({ error: 'Template not found' })
   res.json({ html })
+})
+
+// POST /api/campaigns/sanitize-html — make pasted HTML email-safe
+router.post('/sanitize-html', async (req, res, next) => {
+  try {
+    const { html } = req.body
+    if (!html) return res.status(400).json({ error: 'html required' })
+
+    const $ = cheerio.load(html, { decodeEntities: false })
+
+    // Replace SVGs with merge tags — first SVG = header logo, second = footer logo
+    let svgIndex = 0
+    $('svg').each((i, el) => {
+      if (svgIndex === 0) {
+        $(el).replaceWith('{{brand_logo}}')
+      } else if (svgIndex === 1) {
+        const h = $(el).attr('height') || '28'
+        $(el).replaceWith(`<img src="{{brand_logo_url}}" alt="{{brand_name}}" height="${h}" style="display:block;border:0;max-height:${h}px;" />`)
+      } else {
+        $(el).remove()
+      }
+      svgIndex++
+    })
+
+    // Remove decorative absolutely-positioned elements (gradients, circles, blobs)
+    $('*').each((i, el) => {
+      const style = $(el).attr('style') || ''
+      if (/position\s*:\s*absolute/.test(style)) $(el).remove()
+    })
+
+    // Strip @import web font declarations from <style> blocks
+    $('style').each((i, el) => {
+      const cleaned = $(el).html().replace(/@import\s+url\([^)]+\)[^;]*;?\s*/g, '')
+      $(el).html(cleaned)
+    })
+
+    // Inline all CSS via juice
+    const inlined = juice($.html())
+
+    res.json({ html: inlined })
+  } catch (err) {
+    next(err)
+  }
 })
 
 // POST /api/campaigns/generate-email

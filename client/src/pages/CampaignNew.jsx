@@ -488,6 +488,27 @@ export default function CampaignNew() {
                     </button>
                     <input ref={htmlFileRef} type="file" accept=".html,.htm" style={{ display: 'none' }}
                       onChange={e => readHtmlFile(e.target.files[0])} />
+                    <button
+                      type="button"
+                      style={{
+                        fontSize: 12, padding: '4px 10px', borderRadius: 6, cursor: 'pointer',
+                        border: '1px solid var(--hubba-amber)', fontWeight: 600,
+                        background: 'rgba(251,176,64,0.1)', color: 'var(--hubba-text)',
+                      }}
+                      disabled={!form.htmlBody}
+                      onClick={async () => {
+                        try {
+                          const { data } = await api.post('/api/campaigns/sanitize-html', { html: form.htmlBody })
+                          set('htmlBody', data.html)
+                          setEditorKey(k => k + 1)
+                          showToast('success', 'HTML prepared — SVGs replaced, CSS inlined, ready to send')
+                        } catch {
+                          showToast('error', 'Failed to prepare HTML')
+                        }
+                      }}
+                    >
+                      ✦ Prepare for email
+                    </button>
                   </>
                 )}
               </div>
