@@ -402,16 +402,23 @@ router.post('/sanitize-html', async (req, res, next) => {
       }
       svgIndex++
     })
+    console.log(`[sanitize] SVGs found: ${svgIndex}`)
 
     // 3. Run juice to inline all CSS (must happen before we check for position:absolute)
     const inlined = juice($.html())
 
     // 4. Re-parse and remove anything that got position:absolute inlined (decorative blobs etc.)
     $ = cheerio.load(inlined, { decodeEntities: false })
+    let absoluteRemoved = 0
     $('*').each((i, el) => {
       const style = $(el).attr('style') || ''
-      if (/position\s*:\s*absolute/.test(style)) $(el).remove()
+      if (/position\s*:\s*absolute/i.test(style)) {
+        $(el).remove()
+        absoluteRemoved++
+      }
     })
+    console.log(`[sanitize] position:absolute elements removed: ${absoluteRemoved}`)
+    console.log(`[sanitize] output has {{brand_logo}}: ${$.html().includes('{{brand_logo}}')}`)
 
     res.json({ html: $.html() })
   } catch (err) {
