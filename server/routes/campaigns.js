@@ -29,18 +29,27 @@ function buildUnsubscribeUrl(contactId, campaignId) {
 
 async function resolveRecipients(segmentRules, brandId) {
   const where = { unsubscribed: false }
-  if (brandId) {
-    where.leads = { some: { brandId } }
-  }
 
-  if (segmentRules) {
+  const hasFilters = segmentRules && (
+    segmentRules.status?.length || segmentRules.source || segmentRules.referrerId || segmentRules.tags?.length
+  )
+
+  if (hasFilters) {
+    // Segment filters active — only contacts with matching leads
     const leadWhere = { ...(brandId && { brandId }) }
     if (segmentRules.status?.length) leadWhere.status = { in: segmentRules.status }
     if (segmentRules.source) leadWhere.source = segmentRules.source
     if (segmentRules.referrerId) leadWhere.referrerId = segmentRules.referrerId
     if (segmentRules.tags?.length) leadWhere.tags = { hasSome: segmentRules.tags }
     where.leads = { some: leadWhere }
+  } else if (brandId) {
+    // No filters — contacts with a lead for this brand, OR contacts with no leads (direct imports)
+    where.OR = [
+      { leads: { some: { brandId } } },
+      { leads: { none: {} } },
+    ]
   }
+  // No brandId + no filters = all non-unsubscribed contacts
 
   return prisma.contact.findMany({
     where,
@@ -150,12 +159,16 @@ router.post('/:id/test', async (req, res, next) => {
       unsubscribeUrl: '#test-unsubscribe',
     })
 
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from: `${campaign.fromName} <${campaign.fromEmail}>`,
       to: email,
       subject: `[TEST] ${campaign.subject}`,
       html,
     })
+
+    if (result.error) {
+      return res.status(400).json({ error: result.error.message || 'Resend rejected the email' })
+    }
 
     res.json({ success: true })
   } catch (err) {
@@ -215,11 +228,20 @@ router.post('/:id/send', async (req, res, next) => {
             html,
             ...(campaign.replyTo && { replyTo: campaign.replyTo }),
           })
-          await prisma.campaignSend.update({
-            where: { id: send.id },
-            data: { resendId: result.data?.id, status: 'sent', sentAt: new Date() },
-          })
-        } catch {
+          if (result.error) {
+            console.error(`Resend error for ${send.contact.email}:`, result.error)
+            await prisma.campaignSend.update({
+              where: { id: send.id },
+              data: { status: 'failed' },
+            })
+          } else {
+            await prisma.campaignSend.update({
+              where: { id: send.id },
+              data: { resendId: result.data?.id, status: 'sent', sentAt: new Date() },
+            })
+          }
+        } catch (err) {
+          console.error(`Send exception for ${send.contact.email}:`, err.message)
           await prisma.campaignSend.update({
             where: { id: send.id },
             data: { status: 'failed' },
