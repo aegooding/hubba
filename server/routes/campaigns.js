@@ -10,8 +10,10 @@ const { templates } = require('../lib/emailTemplates')
 
 function applyMergeTags(html, { firstName, brandName, unsubscribeUrl, brandLogoUrl }) {
   const logoImg = brandLogoUrl
-    ? `<img src="${brandLogoUrl}" alt="${brandName}" width="auto" height="48" style="max-height:48px;height:48px;display:block;border:0;outline:none;" />`
+    ? `<img src="${brandLogoUrl}" alt="${brandName}" height="48" border="0" style="display:block;border:0;outline:none;height:48px;max-height:48px;max-width:100%;" />`
     : `<span style="display:block;font-size:22px;font-weight:700;color:white;letter-spacing:-0.5px;font-family:Arial,sans-serif;">${brandName}</span>`
+  const logoTagCount = (html.match(/\{\{brand_logo\}\}/g) || []).length
+  console.log(`[merge] {{brand_logo}} found ${logoTagCount} time(s), logoUrl: ${brandLogoUrl || 'none'}`)
   const merged = html
     .replace(/\{\{first_name\}\}/g, firstName || 'there')
     .replace(/\{\{brand_name\}\}/g, brandName || '')
@@ -144,6 +146,27 @@ router.patch('/:id', async (req, res, next) => {
   }
 })
 
+// GET /api/campaigns/:id/preview — render final merged HTML in browser (debug)
+router.get('/:id/preview', async (req, res, next) => {
+  try {
+    const campaign = await prisma.campaign.findUnique({
+      where: { id: req.params.id },
+      include: { brand: true },
+    })
+    if (!campaign) return res.status(404).send('Campaign not found')
+    const html = applyMergeTags(campaign.htmlBody, {
+      firstName: 'Preview',
+      brandName: campaign.brand.name,
+      brandLogoUrl: campaign.brand.logoUrl,
+      unsubscribeUrl: '#preview-unsubscribe',
+    })
+    res.setHeader('Content-Type', 'text/html')
+    res.send(html)
+  } catch (err) {
+    next(err)
+  }
+})
+
 // POST /api/campaigns/:id/test — send to a single address
 router.post('/:id/test', async (req, res, next) => {
   try {
@@ -156,6 +179,8 @@ router.post('/:id/test', async (req, res, next) => {
     })
     if (!campaign) return res.status(404).json({ error: 'Campaign not found' })
 
+    console.log('[test-send] brand logoUrl:', campaign.brand.logoUrl)
+    console.log('[test-send] htmlBody has {{brand_logo}}:', campaign.htmlBody?.includes('{{brand_logo}}'))
     const html = applyMergeTags(campaign.htmlBody, {
       firstName: 'Test',
       brandName: campaign.brand.name,
@@ -196,6 +221,8 @@ router.post('/:id/send', async (req, res, next) => {
     })
 
     console.log('[send] brand logoUrl:', campaign.brand.logoUrl)
+    const hasMergeTag = campaign.htmlBody?.includes('{{brand_logo}}')
+    console.log('[send] htmlBody has {{brand_logo}}:', hasMergeTag)
     const contacts = await resolveRecipients(campaign.segmentRules, campaign.brandId)
 
     if (contacts.length === 0) {
