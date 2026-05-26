@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const jwt = require('jsonwebtoken')
+const juice = require('juice')
 const prisma = require('../lib/prisma')
 const resend = require('../lib/resend')
 const { templates } = require('../lib/emailTemplates')
@@ -9,12 +10,13 @@ function applyMergeTags(html, { firstName, brandName, unsubscribeUrl, brandLogoU
   const logoImg = brandLogoUrl
     ? `<img src="${brandLogoUrl}" alt="${brandName}" width="auto" height="48" style="max-height:48px;height:48px;display:block;border:0;outline:none;" />`
     : `<span style="display:block;font-size:22px;font-weight:700;color:white;letter-spacing:-0.5px;font-family:Arial,sans-serif;">${brandName}</span>`
-  return html
+  const merged = html
     .replace(/\{\{first_name\}\}/g, firstName || 'there')
     .replace(/\{\{brand_name\}\}/g, brandName || '')
     .replace(/\{\{unsubscribe_url\}\}/g, unsubscribeUrl || '#')
     .replace(/\{\{brand_logo\}\}/g, logoImg)
     .replace(/\{\{brand_logo_url\}\}/g, brandLogoUrl || '')
+  return juice(merged)
 }
 
 function buildUnsubscribeUrl(contactId, campaignId) {
