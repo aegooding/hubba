@@ -191,6 +191,7 @@ router.post('/:id/send', async (req, res, next) => {
       data: { status: 'SENDING' },
     })
 
+    console.log('[send] brand logoUrl:', campaign.brand.logoUrl)
     const contacts = await resolveRecipients(campaign.segmentRules, campaign.brandId)
 
     if (contacts.length === 0) {
