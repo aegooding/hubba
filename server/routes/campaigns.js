@@ -376,9 +376,14 @@ router.post('/sanitize-html', async (req, res, next) => {
     const { html } = req.body
     if (!html) return res.status(400).json({ error: 'html required' })
 
-    const $ = cheerio.load(html, { decodeEntities: false })
+    let $ = cheerio.load(html, { decodeEntities: false })
 
-    // Replace SVGs with merge tags — first SVG = header logo, second = footer logo
+    // 1. Strip @import web font declarations so juice doesn't try to fetch them
+    $('style').each((i, el) => {
+      $(el).html($(el).html().replace(/@import\s+url\([^)]+\)[^;]*;?\s*/g, ''))
+    })
+
+    // 2. Replace SVGs with merge tags — first SVG = header logo, second = footer logo
     let svgIndex = 0
     $('svg').each((i, el) => {
       if (svgIndex === 0) {
@@ -392,22 +397,17 @@ router.post('/sanitize-html', async (req, res, next) => {
       svgIndex++
     })
 
-    // Remove decorative absolutely-positioned elements (gradients, circles, blobs)
+    // 3. Run juice to inline all CSS (must happen before we check for position:absolute)
+    const inlined = juice($.html())
+
+    // 4. Re-parse and remove anything that got position:absolute inlined (decorative blobs etc.)
+    $ = cheerio.load(inlined, { decodeEntities: false })
     $('*').each((i, el) => {
       const style = $(el).attr('style') || ''
       if (/position\s*:\s*absolute/.test(style)) $(el).remove()
     })
 
-    // Strip @import web font declarations from <style> blocks
-    $('style').each((i, el) => {
-      const cleaned = $(el).html().replace(/@import\s+url\([^)]+\)[^;]*;?\s*/g, '')
-      $(el).html(cleaned)
-    })
-
-    // Inline all CSS via juice
-    const inlined = juice($.html())
-
-    res.json({ html: inlined })
+    res.json({ html: $.html() })
   } catch (err) {
     next(err)
   }
