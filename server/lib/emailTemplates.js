@@ -14,10 +14,9 @@ const templates = {
   .header p { margin: 8px 0 0; color: rgba(255,255,255,0.75); font-size: 14px; }
   .body { background: #ecdbba; border-radius: 0 0 8px 8px; padding: 32px; }
   .body p { color: #2d3b2d; font-size: 15px; line-height: 1.6; margin: 0 0 16px; }
-  .cta { text-align: center; margin: 28px 0; }
-  .cta a { background: #fbb040; color: #0f0f0f; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: 700; font-size: 15px; display: inline-block; }
+  .cta { text-align: center; margin: 28px 0 0; }
   .footer { text-align: center; padding: 20px 0 0; font-size: 12px; color: #6b6560; }
-  .footer a { color: #356852; }
+  .footer a { color: #356852; text-decoration: none; }
   @media (max-width: 480px) { .header, .body { padding: 20px; } }
 </style>
 </head>
@@ -32,7 +31,7 @@ const templates = {
     <p>Write your message here. This is a great place to share news, offers, or updates with your customers.</p>
     <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
     <div class="cta">
-      <a href="#">Get Started Today</a>
+      <a href="#" style="background:#fbb040;color:#0f0f0f !important;text-decoration:none;padding:14px 32px;border-radius:6px;font-weight:700;font-size:15px;display:inline-block;">Get Started Today</a>
     </div>
     <p style="font-size:13px;color:#6b6560;">If you have any questions, simply reply to this email and we'll be happy to help.</p>
   </div>
@@ -54,15 +53,12 @@ const templates = {
   body { margin: 0; padding: 0; background: #f5f7f5; font-family: Arial, sans-serif; }
   .wrapper { max-width: 600px; margin: 0 auto; padding: 24px 16px; }
   .header { background: #2D5F4F; border-radius: 8px 8px 0 0; padding: 32px; }
-  .header-logo { max-height: 48px; display: block; margin-bottom: 12px; }
-  .header h1 { margin: 0; color: white; font-size: 26px; font-style: italic; letter-spacing: -0.5px; }
   .header p { margin: 8px 0 0; color: rgba(255,255,255,0.7); font-size: 14px; }
   .body { background: white; border-radius: 0 0 8px 8px; padding: 32px; border: 1px solid #e8eee8; border-top: none; }
   .body p { color: #1a1a1a; font-size: 15px; line-height: 1.65; margin: 0 0 16px; }
-  .cta { text-align: center; margin: 28px 0; }
-  .cta a { background: #2D5F4F; color: white; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: 700; font-size: 15px; display: inline-block; }
+  .cta { text-align: center; margin: 28px 0 0; }
   .footer { text-align: center; padding: 20px 0 0; font-size: 12px; color: #6b6560; }
-  .footer a { color: #2D5F4F; }
+  .footer a { color: #2D5F4F; text-decoration: none; }
   @media (max-width: 480px) { .header, .body { padding: 20px; } }
 </style>
 </head>
@@ -77,12 +73,12 @@ const templates = {
     <p>Write your message here. Share something valuable with your audience — an update, an offer, or helpful advice.</p>
     <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation ullamco.</p>
     <div class="cta">
-      <a href="#">Learn More</a>
+      <a href="#" style="background:#2D5F4F;color:#ffffff !important;text-decoration:none;padding:14px 32px;border-radius:6px;font-weight:700;font-size:15px;display:inline-block;">Learn More</a>
     </div>
-    <p style="font-size:13px;color:#6b6560;">Questions? Just reply to this email.</p>
+    <p style="font-size:13px;color:#6b6560;margin-top:16px;">Questions? Just reply to this email.</p>
   </div>
   <div class="footer">
-    <p>© {{brand_name}} · <a href="{{unsubscribe_url}}">Unsubscribe</a></p>
+    <p>© {{brand_name}} · <a href="{{unsubscribe_url}}" style="color:#2D5F4F;text-decoration:none;">Unsubscribe</a></p>
   </div>
 </div>
 </body>
