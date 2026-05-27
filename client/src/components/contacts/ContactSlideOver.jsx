@@ -14,11 +14,24 @@ const EVENT_ICONS = {
   unsubscribed: '🚫',
 }
 
-export default function ContactSlideOver({ contact: initial, onClose, onUpdate }) {
+export default function ContactSlideOver({ contact: initial, onClose, onUpdate, onDelete }) {
   const [contact, setContact] = useState(initial)
   const [loading, setLoading] = useState(true)
   const [resubscribeConfirm, setResubscribeConfirm] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  async function handleDelete() {
+    setDeleting(true)
+    try {
+      await api.delete(`/api/contacts/${contact.id}`)
+      onDelete?.(contact.id)
+      onClose()
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   useEffect(() => {
     if (!initial?.id) return
@@ -204,6 +217,46 @@ export default function ContactSlideOver({ contact: initial, onClose, onUpdate }
                 </div>
               )}
             </>
+          )}
+        </div>
+
+        {/* Footer — delete */}
+        <div style={{ padding: '14px 24px', borderTop: '1px solid var(--hubba-border)' }}>
+          {!confirmDelete ? (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              style={{
+                padding: '8px 16px', borderRadius: 6, border: 'none',
+                background: '#fee2e2', color: '#991b1b',
+                fontSize: 13, fontWeight: 500, cursor: 'pointer',
+              }}
+            >
+              Delete contact
+            </button>
+          ) : (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span style={{ fontSize: 13, color: 'var(--hubba-text-muted)', flex: 1 }}>
+                Delete contact and all their leads? This cannot be undone.
+              </span>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                style={{
+                  padding: '8px 16px', borderRadius: 6, border: 'none',
+                  background: '#991b1b', color: 'white',
+                  fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                {deleting ? 'Deleting…' : 'Yes, delete'}
+              </button>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                className="btn-ghost"
+                style={{ fontSize: 13 }}
+              >
+                Cancel
+              </button>
+            </div>
           )}
         </div>
       </div>

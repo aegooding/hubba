@@ -36,6 +36,11 @@ export default function Contacts() {
     setContacts(prev => prev.map(c => c.id === updated.id ? { ...c, ...updated } : c))
   }
 
+  function handleDelete(id) {
+    setContacts(prev => prev.filter(c => c.id !== id))
+    setTotal(prev => prev - 1)
+  }
+
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Top bar */}
@@ -138,6 +143,7 @@ export default function Contacts() {
           contact={selected}
           onClose={() => setSelected(null)}
           onUpdate={handleUpdate}
+          onDelete={id => { handleDelete(id); setSelected(null) }}
         />
       )}
     </div>

@@ -16,6 +16,20 @@ export default function Campaigns() {
   const { activeBrand } = useBrand()
   const [campaigns, setCampaigns] = useState([])
   const [loading, setLoading] = useState(true)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+
+  async function handleDelete(id, e) {
+    e.stopPropagation()
+    setDeleting(true)
+    try {
+      await api.delete(`/api/campaigns/${id}`)
+      setCampaigns(prev => prev.filter(c => c.id !== id))
+      setConfirmDeleteId(null)
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const fetch = useCallback(async () => {
     setLoading(true)
@@ -62,8 +76,8 @@ export default function Campaigns() {
               <div
                 key={c.id}
                 className="card"
-                onClick={() => navigate(c.status === 'DRAFT' ? `/campaigns/${c.id}/edit` : `/campaigns/${c.id}`)}
-                style={{ padding: '20px 22px', cursor: 'pointer', transition: 'box-shadow 0.15s' }}
+                onClick={() => confirmDeleteId !== c.id && navigate(c.status === 'DRAFT' ? `/campaigns/${c.id}/edit` : `/campaigns/${c.id}`)}
+                style={{ padding: '20px 22px', cursor: confirmDeleteId === c.id ? 'default' : 'pointer', transition: 'box-shadow 0.15s' }}
                 onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.1)'}
                 onMouseLeave={e => e.currentTarget.style.boxShadow = ''}
               >
@@ -72,35 +86,75 @@ export default function Campaigns() {
                     fontSize: 11, padding: '3px 9px', borderRadius: 999, fontWeight: 600,
                     ...(STATUS_STYLES[c.status] || STATUS_STYLES.DRAFT),
                   }}>{c.status}</span>
-                  <span style={{ fontSize: 11, color: 'var(--hubba-text-muted)' }}>
-                    {c.brand?.name}
-                  </span>
-                </div>
-                <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4, fontFamily: 'var(--font-display)' }}>
-                  {c.name}
-                </div>
-                <div style={{ fontSize: 13, color: 'var(--hubba-text-muted)', marginBottom: 14 }}>
-                  {c.subject}
-                </div>
-                <div style={{ display: 'flex', gap: 20, fontSize: 13 }}>
-                  <div>
-                    <span style={{ fontWeight: 600 }}>{c.recipientCount || 0}</span>
-                    <span style={{ color: 'var(--hubba-text-muted)', marginLeft: 3 }}>recipients</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 11, color: 'var(--hubba-text-muted)' }}>{c.brand?.name}</span>
+                    <button
+                      onClick={e => { e.stopPropagation(); setConfirmDeleteId(c.id) }}
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px',
+                        color: 'var(--hubba-text-muted)', fontSize: 14, lineHeight: 1,
+                        borderRadius: 4, display: confirmDeleteId === c.id ? 'none' : 'block',
+                      }}
+                      title="Delete campaign"
+                    >🗑</button>
                   </div>
-                  {c.status === 'SENT' && (
-                    <div>
-                      <span style={{ fontWeight: 600, color: 'var(--hubba-success)' }}>
-                        {c.recipientCount > 0 ? Math.round((c.deliveredCount / c.recipientCount) * 100) : 0}%
-                      </span>
-                      <span style={{ color: 'var(--hubba-text-muted)', marginLeft: 3 }}>delivered</span>
-                    </div>
-                  )}
-                  {c.sentAt && (
-                    <div style={{ color: 'var(--hubba-text-muted)' }}>
-                      {new Date(c.sentAt).toLocaleDateString()}
-                    </div>
-                  )}
                 </div>
+
+                {confirmDeleteId === c.id ? (
+                  <div onClick={e => e.stopPropagation()} style={{ padding: '8px 0' }}>
+                    <p style={{ fontSize: 13, color: 'var(--hubba-text)', margin: '0 0 12px', fontWeight: 500 }}>
+                      Delete "{c.name}"? This cannot be undone.
+                    </p>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={e => handleDelete(c.id, e)}
+                        disabled={deleting}
+                        style={{
+                          padding: '7px 16px', borderRadius: 6, border: 'none',
+                          background: '#991b1b', color: 'white',
+                          fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                        }}
+                      >
+                        {deleting ? 'Deleting…' : 'Yes, delete'}
+                      </button>
+                      <button
+                        onClick={e => { e.stopPropagation(); setConfirmDeleteId(null) }}
+                        className="btn-ghost"
+                        style={{ fontSize: 13 }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4, fontFamily: 'var(--font-display)' }}>
+                      {c.name}
+                    </div>
+                    <div style={{ fontSize: 13, color: 'var(--hubba-text-muted)', marginBottom: 14 }}>
+                      {c.subject}
+                    </div>
+                    <div style={{ display: 'flex', gap: 20, fontSize: 13 }}>
+                      <div>
+                        <span style={{ fontWeight: 600 }}>{c.recipientCount || 0}</span>
+                        <span style={{ color: 'var(--hubba-text-muted)', marginLeft: 3 }}>recipients</span>
+                      </div>
+                      {c.status === 'SENT' && (
+                        <div>
+                          <span style={{ fontWeight: 600, color: 'var(--hubba-success)' }}>
+                            {c.recipientCount > 0 ? Math.round((c.deliveredCount / c.recipientCount) * 100) : 0}%
+                          </span>
+                          <span style={{ color: 'var(--hubba-text-muted)', marginLeft: 3 }}>delivered</span>
+                        </div>
+                      )}
+                      {c.sentAt && (
+                        <div style={{ color: 'var(--hubba-text-muted)' }}>
+                          {new Date(c.sentAt).toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>

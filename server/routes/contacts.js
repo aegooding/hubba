@@ -94,6 +94,22 @@ router.patch('/:id', async (req, res, next) => {
   }
 })
 
+// DELETE /api/contacts/:id
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const id = req.params.id
+    // Delete child records in dependency order
+    await prisma.emailEvent.deleteMany({ where: { contactId: id } })
+    await prisma.campaignSend.deleteMany({ where: { contactId: id } })
+    await prisma.activity.deleteMany({ where: { lead: { contactId: id } } })
+    await prisma.lead.deleteMany({ where: { contactId: id } })
+    await prisma.contact.delete({ where: { id } })
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+})
+
 // POST /api/contacts/import
 router.post('/import', upload.single('file'), async (req, res, next) => {
   try {

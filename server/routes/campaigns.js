@@ -146,6 +146,19 @@ router.patch('/:id', async (req, res, next) => {
   }
 })
 
+// DELETE /api/campaigns/:id
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const id = req.params.id
+    await prisma.emailEvent.deleteMany({ where: { campaignSend: { campaignId: id } } })
+    await prisma.campaignSend.deleteMany({ where: { campaignId: id } })
+    await prisma.campaign.delete({ where: { id } })
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+})
+
 // POST /api/campaigns/:id/test — send to a single address
 router.post('/:id/test', async (req, res, next) => {
   try {

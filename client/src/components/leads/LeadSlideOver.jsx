@@ -72,11 +72,18 @@ export default function LeadSlideOver({ lead: initialLead, onClose, onUpdate, on
     }
   }
 
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
   async function handleDelete() {
-    if (!confirm('Delete this lead? This cannot be undone.')) return
-    await api.delete(`/api/leads/${lead.id}`)
-    onDelete?.(lead.id)
-    onClose()
+    setDeleting(true)
+    try {
+      await api.delete(`/api/leads/${lead.id}`)
+      onDelete?.(lead.id)
+      onClose()
+    } finally {
+      setDeleting(false)
+    }
   }
 
   if (!lead) return null
@@ -302,19 +309,46 @@ export default function LeadSlideOver({ lead: initialLead, onClose, onUpdate, on
         <div style={{
           padding: '14px 24px',
           borderTop: '1px solid var(--hubba-border)',
-          display: 'flex', gap: 8,
         }}>
-          <button className="btn-secondary" style={{ flex: 1 }}>Edit</button>
-          <button
-            onClick={handleDelete}
-            style={{
-              padding: '8px 16px', borderRadius: 6, border: 'none',
-              background: '#fee2e2', color: '#991b1b',
-              fontSize: 14, fontWeight: 500, cursor: 'pointer',
-            }}
-          >
-            Delete
-          </button>
+          {!confirmDelete ? (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn-secondary" style={{ flex: 1 }}>Edit</button>
+              <button
+                onClick={() => setConfirmDelete(true)}
+                style={{
+                  padding: '8px 16px', borderRadius: 6, border: 'none',
+                  background: '#fee2e2', color: '#991b1b',
+                  fontSize: 14, fontWeight: 500, cursor: 'pointer',
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span style={{ fontSize: 13, color: 'var(--hubba-text-muted)', flex: 1 }}>
+                Delete this lead? This cannot be undone.
+              </span>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                style={{
+                  padding: '8px 16px', borderRadius: 6, border: 'none',
+                  background: '#991b1b', color: 'white',
+                  fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                {deleting ? 'Deleting…' : 'Yes, delete'}
+              </button>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                className="btn-ghost"
+                style={{ fontSize: 13 }}
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </>

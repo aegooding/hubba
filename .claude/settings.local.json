@@ -10,7 +10,8 @@
       "Bash(curl -s \"https://elxfwhljjfvbbsxqcyxm.supabase.co/storage/v1/object/public/logos/brands/klasp/logo.png\")",
       "Bash(curl -s https://hubba-32zh.onrender.com/api/health)",
       "Bash(git commit *)",
-      "Bash(npm uninstall *)"
+      "Bash(npm uninstall *)",
+      "Bash(npm list *)"
     ]
   }
 }
