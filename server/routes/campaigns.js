@@ -57,6 +57,11 @@ async function resolveRecipients(segmentRules, brandId) {
   }
   // No brandId + no filters = all non-unsubscribed contacts
 
+  // Contact-level tag filter (applied independently of lead filters)
+  if (segmentRules?.contactTags?.length) {
+    where.tags = { hasSome: segmentRules.contactTags }
+  }
+
   return prisma.contact.findMany({
     where,
     select: { id: true, email: true, firstName: true, lastName: true },

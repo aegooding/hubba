@@ -42,6 +42,7 @@ export default function CampaignNew() {
   const [templateList, setTemplateList] = useState([])
   const [mobilePreview, setMobilePreview] = useState(false)
   const [audienceCount, setAudienceCount] = useState(null)
+  const [availableTags, setAvailableTags] = useState([])
   const [saving, setSaving] = useState(false)
   const [sending, setSending] = useState(false)
   const [testEmail, setTestEmail] = useState('')
@@ -68,7 +69,7 @@ export default function CampaignNew() {
     fromName: '',
     fromEmail: '',
     replyTo: '',
-    segmentRules: { status: [], source: '', referrerId: '' },
+    segmentRules: { status: [], source: '', referrerId: '', contactTags: [] },
   })
 
   function set(field, val) { setForm(prev => ({ ...prev, [field]: val })) }
@@ -107,7 +108,7 @@ export default function CampaignNew() {
           fromName: data.fromName,
           fromEmail: data.fromEmail,
           replyTo: data.replyTo || '',
-          segmentRules: data.segmentRules || { status: [], source: '', referrerId: '' },
+          segmentRules: data.segmentRules || { status: [], source: '', referrerId: '', contactTags: [] },
         })
       }).catch(() => {})
     }
@@ -230,6 +231,7 @@ export default function CampaignNew() {
           status: form.segmentRules.status?.length ? form.segmentRules.status : undefined,
           source: form.segmentRules.source || undefined,
           referrerId: form.segmentRules.referrerId || undefined,
+          contactTags: form.segmentRules.contactTags?.length ? form.segmentRules.contactTags : undefined,
         },
       })
       setAudienceCount(data.count)
@@ -237,7 +239,12 @@ export default function CampaignNew() {
   }
 
   useEffect(() => {
-    if (step === 2) fetchAudienceCount()
+    if (step === 2) {
+      fetchAudienceCount()
+      if (availableTags.length === 0) {
+        api.get('/api/contacts/tags').then(({ data }) => setAvailableTags(data.tags)).catch(() => {})
+      }
+    }
   }, [step, form.segmentRules, form.brandId])
 
   const FALLBACK_HTML = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;padding:32px;max-width:600px;margin:0 auto"><p>Hi {{first_name}},</p><p>Write your message here.</p><p style="font-size:12px;color:#999;margin-top:32px;"><a href="{{unsubscribe_url}}">Unsubscribe</a></p></body></html>`
@@ -253,6 +260,7 @@ export default function CampaignNew() {
           status: form.segmentRules.status?.length ? form.segmentRules.status : undefined,
           source: form.segmentRules.source || undefined,
           referrerId: form.segmentRules.referrerId || undefined,
+          contactTags: form.segmentRules.contactTags?.length ? form.segmentRules.contactTags : undefined,
         },
       }
       if (campaignId) {
@@ -328,6 +336,11 @@ export default function CampaignNew() {
   function toggleStatus(s) {
     const current = form.segmentRules.status || []
     setSegment('status', current.includes(s) ? current.filter(x => x !== s) : [...current, s])
+  }
+
+  function toggleContactTag(t) {
+    const current = form.segmentRules.contactTags || []
+    setSegment('contactTags', current.includes(t) ? current.filter(x => x !== t) : [...current, t])
   }
 
   const canProceed1 = form.name && form.subject && form.fromName && form.fromEmail && form.brandId &&
@@ -681,7 +694,7 @@ export default function CampaignNew() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: availableTags.length > 0 ? 16 : 0 }}>
                 <div>
                   <label className="label">Source</label>
                   <select className="input" value={form.segmentRules.source || ''} onChange={e => setSegment('source', e.target.value)}>
@@ -697,6 +710,30 @@ export default function CampaignNew() {
                   </select>
                 </div>
               </div>
+
+              {availableTags.length > 0 && (
+                <div>
+                  <label className="label">Audience tag (select any)</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                    {availableTags.map(t => {
+                      const active = (form.segmentRules.contactTags || []).includes(t)
+                      return (
+                        <button key={t} onClick={() => toggleContactTag(t)} style={{
+                          padding: '5px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600,
+                          cursor: 'pointer', border: '2px solid',
+                          borderColor: active ? 'var(--hubba-amber)' : 'var(--hubba-border)',
+                          background: active ? 'rgba(251,176,64,0.15)' : 'white',
+                          color: active ? 'var(--hubba-amber-dark)' : 'var(--hubba-text-muted)',
+                          transition: 'all 0.15s',
+                        }}>{t}</button>
+                      )
+                    })}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--hubba-text-muted)', marginTop: 4 }}>
+                    Leave empty to include all audiences.
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -730,6 +767,7 @@ export default function CampaignNew() {
                   ['From', `${form.fromName} <${form.fromEmail}>`],
                   ['Recipients', audienceCount !== null ? `${audienceCount} contacts` : '…'],
                   ['Statuses', form.segmentRules.status?.length ? form.segmentRules.status.join(', ') : 'All'],
+                  ['Audiences', form.segmentRules.contactTags?.length ? form.segmentRules.contactTags.join(', ') : 'All'],
                 ].map(([label, value]) => (
                   <div key={label}>
                     <div className="label">{label}</div>

@@ -43,6 +43,20 @@ router.get('/', async (req, res, next) => {
   }
 })
 
+// GET /api/contacts/tags — all distinct tag values across contacts
+router.get('/tags', async (req, res, next) => {
+  try {
+    const contacts = await prisma.contact.findMany({
+      where: { tags: { isEmpty: false } },
+      select: { tags: true },
+    })
+    const tags = [...new Set(contacts.flatMap(c => c.tags))].sort()
+    res.json({ tags })
+  } catch (err) {
+    next(err)
+  }
+})
+
 // GET /api/contacts/import/template
 router.get('/import/template', (req, res) => {
   const csv = 'email,first_name,last_name,phone,unsubscribed\nexample@email.com,Jane,Smith,0400000000,false\n'
