@@ -34,6 +34,7 @@ export default function CampaignAnalytics() {
   const [stats, setStats] = useState(null)
   const [timeline, setTimeline] = useState([])
   const [recipients, setRecipients] = useState([])
+  const [tagBreakdown, setTagBreakdown] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -45,6 +46,7 @@ export default function CampaignAnalytics() {
       setStats(sRes.data.stats)
       setTimeline(sRes.data.timeline.filter(t => t.opens > 0 || t.clicks > 0 || t.hour < 24))
       setRecipients(sRes.data.recipients)
+      setTagBreakdown(sRes.data.tagBreakdown || [])
       setLoading(false)
     }).catch(() => navigate('/campaigns'))
   }, [id])
@@ -100,6 +102,47 @@ export default function CampaignAnalytics() {
         </div>
       )}
 
+      {/* Audience tag breakdown */}
+      {tagBreakdown.length > 0 && (
+        <div style={{ marginBottom: 28 }}>
+          <div className="label" style={{ marginBottom: 12 }}>Audience breakdown</div>
+          <div className="card" style={{ overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid var(--hubba-border)' }}>
+                  {['Audience', 'Sent', 'Delivered', 'Opens', 'Open rate', 'Clicks', 'Click rate'].map(h => (
+                    <th key={h} style={{
+                      padding: '10px 14px', textAlign: 'left', fontSize: 11,
+                      fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
+                      color: 'var(--hubba-text-muted)',
+                    }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {tagBreakdown.map(row => (
+                  <tr key={row.tag} style={{ borderBottom: '1px solid var(--hubba-border)' }}>
+                    <td style={{ padding: '10px 14px' }}>
+                      <span style={{
+                        fontSize: 12, padding: '3px 10px', borderRadius: 999,
+                        background: 'rgba(251,176,64,0.15)', color: 'var(--hubba-amber-dark)',
+                        fontWeight: 600,
+                      }}>{row.tag}</span>
+                    </td>
+                    <td style={{ padding: '10px 14px', fontWeight: 600 }}>{row.sent}</td>
+                    <td style={{ padding: '10px 14px' }}>{row.delivered}</td>
+                    <td style={{ padding: '10px 14px' }}>{row.opens}</td>
+                    <td style={{ padding: '10px 14px', color: '#1e40af', fontWeight: 600 }}>{row.openRate}%</td>
+                    <td style={{ padding: '10px 14px' }}>{row.clicks}</td>
+                    <td style={{ padding: '10px 14px', color: '#5b21b6', fontWeight: 600 }}>{row.clickRate}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Recipients table */}
       <div>
         <div className="label" style={{ marginBottom: 12 }}>Recipients ({recipients.length})</div>
@@ -107,7 +150,7 @@ export default function CampaignAnalytics() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--hubba-border)' }}>
-                {['Name', 'Email', 'Status', 'Events', 'Sent'].map(h => (
+                {['Name', 'Email', 'Audience', 'Status', 'Events', 'Sent'].map(h => (
                   <th key={h} style={{
                     padding: '10px 14px', textAlign: 'left', fontSize: 11,
                     fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
@@ -121,6 +164,17 @@ export default function CampaignAnalytics() {
                 <tr key={i} style={{ borderBottom: '1px solid var(--hubba-border)' }}>
                   <td style={{ padding: '10px 14px', fontWeight: 600 }}>{r.name || '—'}</td>
                   <td style={{ padding: '10px 14px', color: 'var(--hubba-text-muted)' }}>{r.email}</td>
+                  <td style={{ padding: '10px 14px' }}>
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      {(r.tags || []).map(t => (
+                        <span key={t} style={{
+                          fontSize: 10, padding: '1px 7px', borderRadius: 999,
+                          background: 'rgba(251,176,64,0.15)', color: 'var(--hubba-amber-dark)',
+                          fontWeight: 600,
+                        }}>{t}</span>
+                      ))}
+                    </div>
+                  </td>
                   <td style={{ padding: '10px 14px' }}>
                     <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, fontWeight: 600, background: 'var(--hubba-surface-2)', color: 'var(--hubba-text-muted)' }}>
                       {r.status}

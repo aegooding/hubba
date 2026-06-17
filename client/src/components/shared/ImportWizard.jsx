@@ -2,12 +2,14 @@ import { useState, useRef } from 'react'
 import Papa from 'papaparse'
 import api from '../../lib/api'
 
-export default function ImportWizard({ fields, uploadUrl, templateUrl, onDone, title = 'Import CSV' }) {
+export default function ImportWizard({ fields, uploadUrl, templateUrl, onDone, title = 'Import CSV', allowTags = false }) {
   const [step, setStep] = useState(1) // 1: upload, 2: map, 3: preview
   const [file, setFile] = useState(null)
   const [headers, setHeaders] = useState([])
   const [rows, setRows] = useState([])
   const [columnMap, setColumnMap] = useState({})
+  const [tags, setTags] = useState([])
+  const [tagInput, setTagInput] = useState('')
   const [result, setResult] = useState(null)
   const [importing, setImporting] = useState(false)
   const [dragOver, setDragOver] = useState(false)
@@ -21,7 +23,6 @@ export default function ImportWizard({ fields, uploadUrl, templateUrl, onDone, t
     setFile(f)
     Papa.parse(f, {
       header: true,
-      preview: 6,
       skipEmptyLines: true,
       complete: ({ data, meta }) => {
         setHeaders(meta.fields || [])
@@ -61,6 +62,7 @@ export default function ImportWizard({ fields, uploadUrl, templateUrl, onDone, t
       const formData = new FormData()
       formData.append('file', file)
       formData.append('columnMap', JSON.stringify(columnMap))
+      if (allowTags && tags.length) formData.append('tags', JSON.stringify(tags))
       const { data } = await api.post(uploadUrl, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
@@ -234,6 +236,58 @@ export default function ImportWizard({ fields, uploadUrl, templateUrl, onDone, t
               {rows.length} rows detected · {rows.filter(r => !hasErrors(r)).length} ready to import
             </div>
           </div>
+
+          {allowTags && (
+            <div style={{ marginBottom: 24 }}>
+              <div className="label" style={{ marginBottom: 8 }}>Audience tags</div>
+              <div style={{ fontSize: 13, color: 'var(--hubba-text-muted)', marginBottom: 10 }}>
+                Tag all imported contacts so you can track their campaign performance separately.
+              </div>
+              {tags.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                  {tags.map(t => (
+                    <span key={t} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      fontSize: 12, padding: '3px 10px', borderRadius: 999,
+                      background: 'rgba(251,176,64,0.15)', color: 'var(--hubba-amber-dark)',
+                      fontWeight: 600,
+                    }}>
+                      {t}
+                      <button
+                        onClick={() => setTags(prev => prev.filter(x => x !== t))}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1, color: 'inherit', fontSize: 14 }}
+                      >×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  className="input"
+                  style={{ flex: 1 }}
+                  placeholder="Type a tag and press Enter…"
+                  value={tagInput}
+                  onChange={e => setTagInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ',') {
+                      e.preventDefault()
+                      const t = tagInput.trim().replace(/,$/, '')
+                      if (t && !tags.includes(t)) setTags(prev => [...prev, t])
+                      setTagInput('')
+                    }
+                  }}
+                />
+                <button
+                  className="btn-secondary"
+                  onClick={() => {
+                    const t = tagInput.trim()
+                    if (t && !tags.includes(t)) setTags(prev => [...prev, t])
+                    setTagInput('')
+                  }}
+                >Add</button>
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn-secondary" onClick={() => setStep(1)}>Back</button>

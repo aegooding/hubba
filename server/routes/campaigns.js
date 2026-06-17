@@ -295,7 +295,7 @@ router.get('/:id/stats', async (req, res, next) => {
       include: {
         sends: {
           include: {
-            contact: { select: { email: true, firstName: true, lastName: true } },
+            contact: { select: { email: true, firstName: true, lastName: true, tags: true } },
             emailEvents: true,
           },
         },
@@ -341,9 +341,31 @@ router.get('/:id/stats', async (req, res, next) => {
       status: s.status,
       sentAt: s.sentAt,
       events: s.emailEvents.map(e => e.event),
+      tags: s.contact.tags || [],
     }))
 
-    res.json({ stats, timeline, recipients })
+    // Per-tag breakdown for audience analytics
+    const allTags = [...new Set(campaign.sends.flatMap(s => s.contact.tags || []))]
+    const tagBreakdown = allTags.map(tag => {
+      const tagged = campaign.sends.filter(s => (s.contact.tags || []).includes(tag))
+      const tagEvents = tagged.flatMap(s => s.emailEvents)
+      const sent = tagged.length
+      const deliveredCount = tagEvents.filter(e => e.event === 'delivered').length
+        || tagged.filter(s => s.status === 'sent' || s.status === 'delivered').length
+      const opens = tagEvents.filter(e => e.event === 'opened').length
+      const clicks = tagEvents.filter(e => e.event === 'clicked').length
+      return {
+        tag,
+        sent,
+        delivered: deliveredCount,
+        opens,
+        clicks,
+        openRate: deliveredCount > 0 ? Math.round((opens / deliveredCount) * 100) : 0,
+        clickRate: deliveredCount > 0 ? Math.round((clicks / deliveredCount) * 100) : 0,
+      }
+    })
+
+    res.json({ stats, timeline, recipients, tagBreakdown })
   } catch (err) {
     next(err)
   }

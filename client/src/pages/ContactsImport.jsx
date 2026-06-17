@@ -32,6 +32,7 @@ export default function ContactsImport() {
         templateUrl="/api/contacts/import/template"
         onDone={() => navigate('/contacts')}
         title="Import Contacts"
+        allowTags
       />
     </div>
   )

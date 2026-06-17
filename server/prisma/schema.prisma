@@ -35,6 +35,8 @@ model Contact {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  tags          String[]       @default([])
+
   leads         Lead[]
   campaignSends CampaignSend[]
   emailEvents   EmailEvent[]

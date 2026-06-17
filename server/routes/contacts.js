@@ -116,6 +116,7 @@ router.post('/import', upload.single('file'), async (req, res, next) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' })
 
     const columnMap = req.body.columnMap ? JSON.parse(req.body.columnMap) : null
+    const importTags = req.body.tags ? JSON.parse(req.body.tags) : []
     const text = req.file.buffer.toString('utf-8')
     const { data: rows, errors } = Papa.parse(text, { header: true, skipEmptyLines: true })
 
@@ -153,10 +154,15 @@ router.post('/import', upload.single('file'), async (req, res, next) => {
           if (existing.unsubscribed && unsubscribed === false) data.unsubscribed = false
           else if (existing.unsubscribed) delete data.unsubscribed
 
+          // Merge tags — never remove existing tags, only add new ones
+          if (importTags.length) {
+            data.tags = [...new Set([...(existing.tags || []), ...importTags])]
+          }
+
           await prisma.contact.update({ where: { email }, data })
           updated++
         } else {
-          await prisma.contact.create({ data: { email, ...data } })
+          await prisma.contact.create({ data: { email, ...data, ...(importTags.length && { tags: importTags }) } })
           created++
         }
       } catch (err) {
