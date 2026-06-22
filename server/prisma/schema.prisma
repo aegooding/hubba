@@ -59,6 +59,7 @@ model Lead {
   loanAmount Float?
   notes      String?
   tags       String[]
+  details    Json?
 
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt

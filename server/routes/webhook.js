@@ -12,7 +12,7 @@ router.post('/', async (req, res, next) => {
 
     const {
       email, firstName, lastName, phone,
-      source, loanType, loanAmount,
+      source, loanType, loanAmount, details,
       utm_source, brandId, brandSlug,
     } = req.body
 
@@ -50,6 +50,7 @@ router.post('/', async (req, res, next) => {
         loanType,
         loanAmount: loanAmount ? Number(loanAmount) : null,
         referrerId,
+        ...(details && { details }),
       },
     })
 

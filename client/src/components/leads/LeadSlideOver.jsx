@@ -16,6 +16,38 @@ function contactName(lead) {
   return [firstName, lastName].filter(Boolean).join(' ') || email
 }
 
+function labelize(key) {
+  return key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, c => c.toUpperCase())
+}
+
+function formatDetailValue(val) {
+  if (val === null || val === undefined || val === '') return null
+  if (Array.isArray(val)) return val.length ? val.join(', ') : null
+  if (typeof val === 'object') {
+    const entries = Object.entries(val).filter(([, v]) => v !== null && v !== undefined && v !== 0 && v !== '')
+    if (!entries.length) return null
+    return entries.map(([k, v]) => `${labelize(k)}: ${v}`).join(' · ')
+  }
+  return String(val)
+}
+
+function DetailsGrid({ details }) {
+  const entries = Object.entries(details || {})
+    .map(([key, val]) => [labelize(key), formatDetailValue(val)])
+    .filter(([, val]) => val !== null)
+  if (!entries.length) return null
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      {entries.map(([label, val]) => (
+        <div key={label}>
+          <div className="label">{label}</div>
+          <div style={{ fontSize: 13 }}>{val}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function LeadSlideOver({ lead: initialLead, onClose, onUpdate, onDelete }) {
   const [lead, setLead] = useState(initialLead)
   const [activities, setActivities] = useState([])
@@ -74,6 +106,7 @@ export default function LeadSlideOver({ lead: initialLead, onClose, onUpdate, on
 
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [detailsOpen, setDetailsOpen] = useState(false)
 
   async function handleDelete() {
     setDeleting(true)
@@ -246,6 +279,31 @@ export default function LeadSlideOver({ lead: initialLead, onClose, onUpdate, on
                   </span>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Full application details */}
+          {lead.details && Object.keys(lead.details).length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <button
+                onClick={() => setDetailsOpen(o => !o)}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                  display: 'flex', alignItems: 'center', gap: 6, width: '100%',
+                }}
+              >
+                <span className="label" style={{ margin: 0 }}>
+                  {detailsOpen ? '▾' : '▸'} Full application details
+                </span>
+              </button>
+              {detailsOpen && (
+                <div style={{
+                  marginTop: 12, padding: '14px 16px', borderRadius: 8,
+                  background: 'var(--hubba-surface-2)',
+                }}>
+                  <DetailsGrid details={lead.details} />
+                </div>
+              )}
             </div>
           )}
 
